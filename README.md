@@ -103,3 +103,7 @@ A local hash proves a byte comparison, not source truth or completeness. Human a
 Case members can retrieve authorized raw evidence. The two-person export workflow governs formal case bundles; it is not a data-loss-prevention boundary against someone already permitted to read the data. Source bytes and model exchanges are encrypted in the local vault, while case metadata, normalized rows, decision arguments, findings, and audit metadata require protected disks and backups.
 
 No live vendor account, enterprise identity provider, or paid model was used for the included tests. No production response actions are available in this release.
+
+## License
+
+Copyright 2026 Stephen Coston. Licensed under the [Apache License, Version 2.0](LICENSE). See [NOTICE](NOTICE) for attribution. Third-party dependencies and referenced research retain their own licenses.

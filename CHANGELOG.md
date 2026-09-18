@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+Add the Apache License, Version 2.0, with Stephen Coston's copyright notice, contribution guidance, and license metadata and files in Python and container distributions.
+
 ## 0.2.0 — 2026-09-18
 
 Complete the local review and recovery workflows: two-person execution reconciliation, citation-bound finding challenges and dispositions, password lifecycle, encrypted signed backup/restore, and whole-state diagnostics. Harden decision/review/session/failure/inventory integrity; protect recovery from active dispatch; bind paged audits to consistent checkpoints; clear browser state at logout; strengthen offline export checks and JSON parsing. Add Windows, CLI, and non-root container acceptance checks, with a pinned base image.

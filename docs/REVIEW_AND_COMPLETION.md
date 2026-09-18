@@ -37,7 +37,9 @@ These requirements need additional implementation and organizational infrastruct
 | Production response actions | Approved connector allowlist, credential broker, target preconditions, rollback and recovery verification | Isolate/restore exercises against designated nonproduction targets; independent confirmation |
 | Research execution at enterprise scale | Isolated PDF extraction/build workers, reviewed method benchmarks, signed pack distribution | Hostile-document containment and independent method-fidelity evaluation; no arbitrary code in the current runtime |
 | Production operations | Organizational threat review, deployment platform, encryption/retention policies, large-case pagination and performance work, disaster-recovery exercise, independent security and accessibility testing | Measured scale/availability and recovery objectives with real infrastructure; remediation of review findings |
-| Release governance | Owner-selected license and release process, supported-platform policy, responsible-disclosure ownership | Recorded owner/organization decisions; no license was assigned without the owner's choice |
+| Release governance | Release process, supported-platform policy, responsible-disclosure ownership | Recorded owner/organization decisions |
+
+Licensing follow-up: the repository now includes the [Apache License, Version 2.0](../LICENSE), an attribution notice, and matching package metadata.
 
 The local profile has no production mutation connectors. Connecting it to real systems requires implementing and validating those boundaries. Merely providing credentials does not turn this release into the full enterprise design.
 

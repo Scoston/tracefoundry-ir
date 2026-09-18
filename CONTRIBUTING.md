@@ -11,4 +11,4 @@ Use Python 3.11 or newer and the development lock file. Keep pull requests scope
 - Keep `docs/design/` as the historical design package. Describe implementation differences in current documents rather than rewriting the original assertions.
 - Tests should challenge trust boundaries and real behavior rather than restating implementation details.
 
-An open-source license has not been selected for this repository. The repository owner should choose one before accepting contributions under an open-source licensing model.
+Contributions intentionally submitted for inclusion are covered by the [Apache License, Version 2.0](LICENSE), as described in Section 5 of that license.
