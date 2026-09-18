@@ -86,7 +86,8 @@ python -m pip install --no-deps -e .
 ruff check src tests scripts
 ruff format --check src tests scripts
 pytest --cov=tracefoundry_ir --cov-report=term-missing
-python docs/design/verification/validate_design.py
+python scripts/validate_design.py
+python scripts/verify_design_package.py
 python -m pip_audit -r requirements.lock
 python -m build
 ```

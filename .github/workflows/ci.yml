@@ -29,9 +29,9 @@ jobs:
       - run: python -m pip install --no-deps -e .
       - run: ruff check src tests scripts
       - run: ruff format --check src tests scripts
-      - run: pytest --cov=tracefoundry_ir --cov-report=term-missing
-      - run: python docs/design/verification/validate_design.py
+      - run: python scripts/validate_design.py
       - run: python scripts/verify_design_package.py
+      - run: pytest --cov=tracefoundry_ir --cov-report=term-missing
       - run: python -m pip_audit -r requirements.lock
       - run: python -m build
   browser:

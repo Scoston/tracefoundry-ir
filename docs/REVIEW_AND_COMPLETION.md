@@ -23,6 +23,8 @@ The first release had working human authorization and cryptographic receipts, bu
 
 The database-tampering tests model a writer who lacks signing keys and retained checkpoints. They do not demonstrate an unauthenticated HTTP exploit. An administrator controlling the host, code, keys, and all retained state remains inside the local trust boundary.
 
+The first expanded CI run passed all 118 application tests on Windows and then identified a preservation issue: the historical checker rewrote its report with Windows line endings. The follow-up wrapper runs that unchanged checker in a temporary copy; the original 22 files retain their exact hashes. This fixes the validation process without weakening the byte-preservation requirement.
+
 ## External work that remains
 
 These requirements need additional implementation and organizational infrastructure. They are not marked complete or silently simulated.

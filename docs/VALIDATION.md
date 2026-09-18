@@ -34,6 +34,8 @@ The runtime dependency audit checks the pinned dependency set against the adviso
 
 The preserved design package has 19 schema/example checks and 40 future acceptance scenarios. Its report is historical and intentionally retains its original wording. The current application tests, status table, and measured results are separate. Do not claim all 40 enterprise acceptance scenarios passed because a local unit test covers part of one requirement.
 
+Run `python scripts/validate_design.py`, followed by `python scripts/verify_design_package.py`. The historical checker generates a report; the wrapper runs it on a temporary copy and compares the result semantically while preserving every original source byte. This prevents Windows text newline conversion from modifying the retained report. The exact-byte verification still runs against the original package.
+
 ## Remaining validation
 
 - Enterprise SSO/MFA, managed keys, WORM storage, independent witness custody, live collectors, and production response connectors are not implemented or tested.

@@ -38,7 +38,8 @@
     "requirements.lock": "af33dddccc78e3f7cdafe485b93cd57fb800f2d5c5a993b882f2d0ea5cf3d7ab",
     "requirements-dev.lock": "e2641a984d8520a07f63e85f24b2ae061a77e3076eff7f4330ded786e11b04de",
     "Dockerfile": "322d0226e230742d0e82a3d25feffc88852e24f21feb5f92ca045c80d4e8801e",
-    ".github/workflows/ci.yml": "6d3bb7cddedf500885c001593eba2f67d10a29429b0bdb2e8590121956e51948"
+    ".github/workflows/ci.yml": "744ec95f3037839c1d946cac53c09e581abbc0e97962e38f7968d06839dcf197",
+    "scripts/validate_design.py": "a038751c69100904c676dd55404236507b245f30983f9bc2a297719978343742"
   },
   "pytest": {
     "passed": 118,
@@ -218,7 +219,8 @@
   "design_package": {
     "schema_checks_passed": 19,
     "original_files_hash_verified": 22,
-    "enterprise_acceptance_scenarios_unexecuted": 40
+    "enterprise_acceptance_scenarios_unexecuted": 40,
+    "preservation_wrapper": "PASS; historical validator executed on a temporary copy, report semantics matched, original byte hashes verified"
   },
   "maintenance": {
     "encrypted_backup_restore": "PASS_SYNTHETIC",
@@ -242,5 +244,13 @@
     "Live model qualification",
     "Production-scale load or enterprise disaster recovery",
     "Independent penetration test or accessibility certification"
-  ]
+  ],
+  "remote_validation_observed": {
+    "initial_run": "https://github.com/Scoston/tracefoundry-ir/actions/runs/35358828464",
+    "windows_application_tests": 118,
+    "linux_python_matrix": "PASS",
+    "browser": "PASS",
+    "container": "PASS",
+    "initial_windows_preservation_check": "Detected newline rewrite by original validator; corrected with copy-based wrapper. See follow-up CI."
+  }
 }
