@@ -1,0 +1,37 @@
+{
+  "example_only": true,
+  "body": {
+    "schema_version": "0.1",
+    "event_id": "EVT-001",
+    "ledger_id": "TENANT-EXAMPLE/CASE-001",
+    "ledger_sequence": "1",
+    "previous_event_sha256": null,
+    "tenant_id": "TENANT-EXAMPLE",
+    "case_id": "CASE-001",
+    "run_id": "RUN-EXAMPLE",
+    "trace_id": "TRACE-EXAMPLE",
+    "parent_event_ids": [],
+    "occurred_at": "2026-09-18T10:01:00Z",
+    "received_at": "2026-09-18T10:01:01Z",
+    "producer": {
+      "id": "approval-service-example",
+      "kind": "service",
+      "issuer": "example-identity-provider"
+    },
+    "producer_sequence": "1",
+    "originating_human_id": "analyst-example",
+    "event_type": "human.review.recorded",
+    "decision_id": "D-001",
+    "execution_id": null,
+    "payload_ref": {
+      "artifact_id": "A-001",
+      "sha256": "a671a8bd4dcb2685188f255c98cc4eeb31c8ecec760f4447b4f63c05f358cf87",
+      "storage_version": "example-version-1"
+    },
+    "outcome": "approved",
+    "clock_uncertainty_ms": 1000
+  },
+  "hash_algorithm": "SHA-256-RFC8785-TFIR-EVENT-v1",
+  "event_sha256": "af65553b2b765ee7b274c41a85ba03476f2b1cbbc900658366f558ab51e86e83",
+  "checkpoint_id": null
+}

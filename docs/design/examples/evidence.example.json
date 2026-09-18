@@ -1,0 +1,49 @@
+{
+  "example_only": true,
+  "schema_version": "0.1",
+  "artifact_id": "E-001",
+  "tenant_id": "TENANT-EXAMPLE",
+  "case_id": "CASE-001",
+  "sha256": "8a253fd29578321073abe1ac3be45588004dbbd55e30340ba4d257ba34828ad8",
+  "byte_length": 97,
+  "media_type": "application/json",
+  "storage": {
+    "uri": "examples/synthetic-evidence.json",
+    "version": "example-version-1"
+  },
+  "source": {
+    "system": "synthetic-fixture",
+    "native_id": "SYNTH-1",
+    "original_timestamp": null,
+    "source_timezone": null,
+    "collection_request_id": "IMPORT-EXAMPLE",
+    "query_ref": null
+  },
+  "collection": {
+    "collector_identity": "fixture-builder",
+    "authorized_decision_id": "D-IMPORT-EXAMPLE",
+    "acquired_at": "2026-09-18T09:59:00Z",
+    "receipt_ref": "NOT-INCLUDED-EXAMPLE-RECEIPT",
+    "status": "partial",
+    "gaps": [
+      "Collection receipt is outside this illustrative subset.",
+      "No original event timestamp is available."
+    ]
+  },
+  "lineage": {
+    "parent_refs": [],
+    "transformation_sha256": null,
+    "locator": null
+  },
+  "governance": {
+    "classification": "internal",
+    "custodian_id": "custodian-example",
+    "retention_policy_id": "DESIGN-EXAMPLE-ONLY",
+    "retain_until": "2027-09-18T09:59:00Z",
+    "hold_ids": []
+  },
+  "native_integrity": {
+    "status": "not_available",
+    "verification_artifact_ref": null
+  }
+}

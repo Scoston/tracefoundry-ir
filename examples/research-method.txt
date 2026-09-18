@@ -1,0 +1,6 @@
+Illustrative audit visibility review method
+
+Source: AWS CloudTrail StopLogging API documentation
+https://docs.aws.amazon.com/awscloudtrail/latest/APIReference/API_StopLogging.html
+
+A normalized event with action exactly StopLogging is a lead for human investigation. It does not prove malicious intent, successful change, or complete loss of logging. Check actor authorization, source response, and independent collection paths. A rule should match StopLogging and should not match GetObject or StopLoggingAttempt. Return a candidate hypothesis with the source record citation; never automatically contain an identity or close the case.

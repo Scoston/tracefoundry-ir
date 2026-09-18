@@ -1,0 +1,227 @@
+{
+  "version": 2,
+  "title": "TraceFoundry IR architecture and decisions",
+  "diagrams": [
+    {
+      "id": "runtime_architecture",
+      "title": "System architecture",
+      "kind": "flowchart",
+      "accessibility": "Separate build, case execution, and evidence responsibilities with mandatory human approval.",
+      "data": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "SOURCE",
+            "label": "Research and approved procedures"
+          },
+          {
+            "id": "BUILD",
+            "label": "Isolated build and independent tests"
+          },
+          {
+            "id": "RELEASE",
+            "label": "Human review and signed registry"
+          },
+          {
+            "id": "HUMAN",
+            "label": "Human case owner"
+          },
+          {
+            "id": "PLANNER",
+            "label": "AI proposals"
+          },
+          {
+            "id": "APPROVAL",
+            "label": "Approval service"
+          },
+          {
+            "id": "GATE",
+            "label": "Execution gateway"
+          },
+          {
+            "id": "TOOLS",
+            "label": "Restricted tools and connectors"
+          },
+          {
+            "id": "VAULT",
+            "label": "Evidence vault"
+          },
+          {
+            "id": "AUDIT",
+            "label": "Audit ledger"
+          },
+          {
+            "id": "WITNESS",
+            "label": "Independent checkpoint witness"
+          }
+        ],
+        "edges": [
+          {
+            "from": "SOURCE",
+            "to": "BUILD",
+            "label": "source versions"
+          },
+          {
+            "from": "BUILD",
+            "to": "RELEASE",
+            "label": "test evidence"
+          },
+          {
+            "from": "RELEASE",
+            "to": "GATE",
+            "label": "approved digests"
+          },
+          {
+            "from": "HUMAN",
+            "to": "PLANNER",
+            "label": "scoped task"
+          },
+          {
+            "from": "PLANNER",
+            "to": "APPROVAL",
+            "label": "proposal"
+          },
+          {
+            "from": "HUMAN",
+            "to": "APPROVAL",
+            "label": "decision"
+          },
+          {
+            "from": "APPROVAL",
+            "to": "GATE",
+            "label": "signed approval"
+          },
+          {
+            "from": "GATE",
+            "to": "TOOLS",
+            "label": "bounded authority"
+          },
+          {
+            "from": "TOOLS",
+            "to": "VAULT",
+            "label": "evidence"
+          },
+          {
+            "from": "APPROVAL",
+            "to": "AUDIT",
+            "label": "review"
+          },
+          {
+            "from": "GATE",
+            "to": "AUDIT",
+            "label": "intent and receipt"
+          },
+          {
+            "from": "VAULT",
+            "to": "AUDIT",
+            "label": "artifact references"
+          },
+          {
+            "from": "AUDIT",
+            "to": "WITNESS",
+            "label": "checkpoint"
+          }
+        ]
+      }
+    },
+    {
+      "id": "decision_flow",
+      "title": "Approval lifecycle",
+      "kind": "flowchart",
+      "accessibility": "Human review precedes gateway checks and execution. Changed or uncertain states cannot silently proceed.",
+      "data": {
+        "direction": "TB",
+        "nodes": [
+          {
+            "id": "PROPOSED",
+            "label": "Proposed decision"
+          },
+          {
+            "id": "REVIEW",
+            "label": "Human review"
+          },
+          {
+            "id": "DENIED",
+            "label": "Rejected or expired"
+          },
+          {
+            "id": "VALIDATE",
+            "label": "Fresh gateway checks"
+          },
+          {
+            "id": "CHANGED",
+            "label": "Changed state requires new review"
+          },
+          {
+            "id": "INTENT",
+            "label": "Durable intent and single use"
+          },
+          {
+            "id": "EXECUTE",
+            "label": "External execution"
+          },
+          {
+            "id": "UNKNOWN",
+            "label": "Unknown outcome and reconciliation"
+          },
+          {
+            "id": "RESULT",
+            "label": "Result verification and human acceptance"
+          }
+        ],
+        "edges": [
+          {
+            "from": "PROPOSED",
+            "to": "REVIEW",
+            "label": "evidence and exact action"
+          },
+          {
+            "from": "REVIEW",
+            "to": "DENIED",
+            "label": "no approval"
+          },
+          {
+            "from": "REVIEW",
+            "to": "VALIDATE",
+            "label": "approved digest"
+          },
+          {
+            "from": "VALIDATE",
+            "to": "CHANGED",
+            "label": "stale or changed"
+          },
+          {
+            "from": "CHANGED",
+            "to": "REVIEW",
+            "label": "new proposal"
+          },
+          {
+            "from": "VALIDATE",
+            "to": "INTENT",
+            "label": "checks pass"
+          },
+          {
+            "from": "INTENT",
+            "to": "EXECUTE",
+            "label": "dispatch"
+          },
+          {
+            "from": "EXECUTE",
+            "to": "UNKNOWN",
+            "label": "timeout or partial uncertainty"
+          },
+          {
+            "from": "EXECUTE",
+            "to": "RESULT",
+            "label": "receipt"
+          },
+          {
+            "from": "UNKNOWN",
+            "to": "RESULT",
+            "label": "approved reconciliation"
+          }
+        ]
+      }
+    }
+  ]
+}

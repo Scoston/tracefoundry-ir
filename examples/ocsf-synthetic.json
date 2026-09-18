@@ -1,0 +1,20 @@
+[
+  {
+    "time": 1789723200000,
+    "activity_name": "Logon",
+    "actor": {
+      "user": {
+        "name": "synthetic-user"
+      }
+    },
+    "src_endpoint": {
+      "ip": "192.0.2.40"
+    },
+    "status": "Success",
+    "resources": [
+      {
+        "name": "synthetic-host"
+      }
+    ]
+  }
+]

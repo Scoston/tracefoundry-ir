@@ -1,0 +1,30 @@
+{
+  "example_only": true,
+  "body": {
+    "approval_id": "A-001",
+    "decision_id": "D-001",
+    "decision_sha256": "505f71a6d886b8df3fbc938763369d664211061070a409c0e593c4bc05c88dd5",
+    "verdict": "approve",
+    "approver": {
+      "subject_id": "analyst-example",
+      "issuer": "example-identity-provider",
+      "kind": "human",
+      "roles_at_review": [
+        "case_analyst"
+      ],
+      "authentication_assurance": "DESIGN-EXAMPLE-NO-AUTHENTICATION",
+      "authentication_event_id": "AUTH-EXAMPLE"
+    },
+    "reviewed_at": "2026-09-18T10:01:00Z",
+    "expires_at": "2026-09-18T10:10:00Z",
+    "rationale": "Example review of the named input and fixed timeline operation.",
+    "review_view_sha256": "2547079537a452e0781c18b7c6d385fc14a1ca55ead04be30b14804f134d79d6",
+    "policy_sha256": "4dd1f3c0d052b920a867c4d3802cf5fcea03b1ed8ce028e1e48f0231d225cec0"
+  },
+  "attestation": {
+    "state": "unsigned_design_example",
+    "algorithm": "ES256",
+    "key_id": null,
+    "signature_base64url": null
+  }
+}

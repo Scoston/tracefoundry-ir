@@ -1,0 +1,43 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "tracefoundry-ir"
+version = "0.1.0"
+description = "Human-authorized incident investigations with accountable evidence and signed audit trails"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "fastapi>=0.115,<1", "uvicorn>=0.34,<1", "cryptography>=44,<52",
+  "rfc8785>=0.1.4,<1", "httpx>=0.28,<1", "jsonschema>=4.23,<5", "filelock>=3.18,<5",
+  # Click's Windows dependency is pinned on all platforms for portable hashed lock files.
+  "colorama>=0.4.6,<1"
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "pytest-cov>=6,<8", "ruff>=0.11,<1", "pip-audit>=2.9,<3", "playwright>=1.50,<2", "build>=1.2,<2"]
+
+[project.scripts]
+tracefoundry = "tracefoundry_ir.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tracefoundry_ir"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP", "S"]
+ignore = ["S101", "S105", "S106", "S608"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S"]

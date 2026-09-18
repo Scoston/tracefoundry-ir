@@ -1,0 +1,89 @@
+{
+  "scope": "Design schema shape, example hashing, selected references and negative fixtures only",
+  "checks": [
+    {
+      "check": "decision schema and illustrative instance",
+      "result": "PASS"
+    },
+    {
+      "check": "approval schema and illustrative instance",
+      "result": "PASS"
+    },
+    {
+      "check": "evidence schema and illustrative instance",
+      "result": "PASS"
+    },
+    {
+      "check": "audit-event schema and illustrative instance",
+      "result": "PASS"
+    },
+    {
+      "check": "raw evidence hash and length",
+      "result": "PASS"
+    },
+    {
+      "check": "decision canonical digest",
+      "result": "PASS"
+    },
+    {
+      "check": "approval bound to example decision",
+      "result": "PASS"
+    },
+    {
+      "check": "decision resolves included evidence",
+      "result": "PASS"
+    },
+    {
+      "check": "audit canonical digest",
+      "result": "PASS"
+    },
+    {
+      "check": "audit payload hash matches approval bytes",
+      "result": "PASS"
+    },
+    {
+      "check": "all illustrative records explicitly marked as examples",
+      "result": "PASS"
+    },
+    {
+      "check": "example approval explicitly unsigned",
+      "result": "PASS"
+    },
+    {
+      "check": "schema rejects agent approver",
+      "result": "PASS"
+    },
+    {
+      "check": "schema rejects unsigned nonexample approval",
+      "result": "PASS"
+    },
+    {
+      "check": "schema rejects disabled human requirement",
+      "result": "PASS"
+    },
+    {
+      "check": "target mutation changes canonical digest",
+      "result": "PASS"
+    },
+    {
+      "check": "schema rejects unsupported outcome",
+      "result": "PASS"
+    },
+    {
+      "check": "acceptance identifiers unique",
+      "result": "PASS"
+    },
+    {
+      "check": "acceptance catalog labeled unexecuted",
+      "result": "PASS"
+    }
+  ],
+  "passed": 19,
+  "failed": 0,
+  "future_implementation_tests": 40,
+  "limitations": [
+    "No live connector, identity, policy, signing or retention enforcement tested.",
+    "Examples are an incomplete illustrative subset, not a verifiable case export.",
+    "No complete Mermaid renderer acceptance claimed."
+  ]
+}

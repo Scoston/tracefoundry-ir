@@ -1,0 +1,45 @@
+{
+  "Records": [
+    {
+      "eventTime": "2026-09-18T09:12:00Z",
+      "eventName": "CreateAccessKey",
+      "eventSource": "iam.amazonaws.com",
+      "userIdentity": {
+        "type": "IAMUser",
+        "arn": "arn:aws:iam::111122223333:user/synthetic-analyst"
+      },
+      "sourceIPAddress": "192.0.2.25",
+      "requestParameters": {
+        "userName": "synthetic-service"
+      }
+    },
+    {
+      "eventTime": "2026-09-18T09:15:00Z",
+      "eventName": "StopLogging",
+      "eventSource": "cloudtrail.amazonaws.com",
+      "userIdentity": {
+        "type": "IAMUser",
+        "arn": "arn:aws:iam::111122223333:user/synthetic-analyst"
+      },
+      "sourceIPAddress": "192.0.2.25",
+      "requestParameters": {
+        "name": "synthetic-trail"
+      }
+    },
+    {
+      "eventTime": "2026-09-18T09:16:00Z",
+      "eventName": "GetObject",
+      "eventSource": "s3.amazonaws.com",
+      "userIdentity": {
+        "type": "IAMUser",
+        "arn": "arn:aws:iam::111122223333:user/synthetic-analyst"
+      },
+      "sourceIPAddress": "192.0.2.25",
+      "resources": [
+        {
+          "ARN": "arn:aws:s3:::synthetic-evidence/object.txt"
+        }
+      ]
+    }
+  ]
+}

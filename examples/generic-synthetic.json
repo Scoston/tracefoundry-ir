@@ -1,0 +1,10 @@
+[
+  {
+    "event_time": "2026-09-18T10:00:00Z",
+    "actor": "synthetic-user",
+    "action": "ConfigurationChanged",
+    "resource": "synthetic-agent",
+    "ip": "192.0.2.50",
+    "outcome": "reported-success"
+  }
+]

@@ -1,0 +1,213 @@
+{
+  "schema": "tracefoundry.local-validation.v1",
+  "recorded_at": "2026-09-18T14:07:41.356583+00:00",
+  "scope": "Local reference application and preserved design package; no enterprise certification",
+  "environment": {
+    "python": "3.12.14",
+    "platform": "Linux",
+    "browser": "Firefox via Playwright"
+  },
+  "runtime_registry_sha256": "94cdcf6c238c2d1df0492c782ffbb5de6724617a6c2abdf9fd32e0878936ad2a",
+  "tested_files_sha256": {
+    "scripts/browser_acceptance.py": "f448f01bcaece9e3a74e89a29467b369a1f1dcfc35e4fbbd33534a019749b350",
+    "scripts/verify_design_package.py": "33ae95e0f6cad3f532213944cb4b111929aacc72bf19c20c722f3a55b5526030",
+    "src/tracefoundry_ir/__init__.py": "72b17b96d83fd1d5cdc944e8ad3406dd1831ad5af2449c8059e82e753f2e1baa",
+    "src/tracefoundry_ir/app.py": "72f18b273da98992da0c7554f7eb15e200b959fdf1e7f451ed45881db02f227c",
+    "src/tracefoundry_ir/cli.py": "7d35eff53182628fddb2c5b215f4f79bf80432f44fcd5d9ea58f146f0b309de2",
+    "src/tracefoundry_ir/models.py": "3213f1bba1ebf2cbe113b52763b06068efd96e269c123ab17da7776d761e5874",
+    "src/tracefoundry_ir/provider.py": "d99bd9e2660deb0aefae8c0bd7d2c1893cf643efd4bde0ac2d8e6e9047ad921a",
+    "src/tracefoundry_ir/security.py": "b619d116d48b2afecea851bb0f2468c1bfaca6266e2407916dbea2f5cb03d32a",
+    "src/tracefoundry_ir/service.py": "58618e432e3ae91f9bbc5263a28dc00fcc13bf294b2fe892d10165ff7d49d94d",
+    "src/tracefoundry_ir/static/app.js": "ae2bf2df2745bfba5353a6c2727eed534e3e2c75844c80d06137269f429a32ac",
+    "src/tracefoundry_ir/static/index.html": "4c0aa7bc8ad8461e41bd84efba04b8bcdd1038f749485949ebc554183b3dbf05",
+    "src/tracefoundry_ir/static/styles.css": "5667593572284af62c404f325963bb1e7e558a75a4b33b190ac85c222c2f2f4d",
+    "src/tracefoundry_ir/store.py": "584f697f054a0b6d06dc00483034d643b815c8639fd1089f872018f610c339db",
+    "src/tracefoundry_ir/tools.py": "7329948949576f90f750cf9a2559cac924703adb7f14ef85e48a5dee3897d1cf",
+    "src/tracefoundry_ir/verify.py": "812064a890384fdc3a346c1a2f24c20c5937181e4dbbce3d548c653bd32cfb77",
+    "tests/conftest.py": "5112087d15c559eba2131b471019942127fa8363abb851e887c0cdfba84191f0",
+    "tests/test_gateway.py": "54684f2392e903559752eed26c48e059440de4d948bfaa7e55eb0a2c3bf21dd8",
+    "tests/test_http_and_tools.py": "b49eb5fc94c35ef05cb397f3e6cef5f86552dbc911347d81f79bac33b2b122a6",
+    "tests/test_integrity.py": "d8ea78e0c70090586f7ea1edc744300e5c1f834a006173fd786addffcf247ea7",
+    "tests/test_research_and_recovery.py": "8fd69b780d0d6f998b06061eca47a7360374956a4312ebeac28b1f788401835a",
+    "pyproject.toml": "654f5de51e0da49f54795db1f046917bb146bc98783f0bf42c0a7e8c8068c217",
+    "requirements.lock": "af33dddccc78e3f7cdafe485b93cd57fb800f2d5c5a993b882f2d0ea5cf3d7ab",
+    "requirements-dev.lock": "e2641a984d8520a07f63e85f24b2ae061a77e3076eff7f4330ded786e11b04de"
+  },
+  "pytest": {
+    "passed": 84,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 31.02,
+    "warnings": [
+      "Starlette httpx test-client deprecation",
+      "AnyIO BlockingPortal alias deprecation"
+    ]
+  },
+  "statement_coverage": {
+    "covered": 1234,
+    "statements": 1428,
+    "percent": 86.41456582633053,
+    "files": {
+      "src/tracefoundry_ir/__init__.py": {
+        "covered_lines": 1,
+        "num_statements": 1,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "src/tracefoundry_ir/app.py": {
+        "covered_lines": 156,
+        "num_statements": 166,
+        "percent_covered": 93.97590361445783,
+        "percent_covered_display": "94",
+        "missing_lines": 10,
+        "excluded_lines": 0,
+        "percent_statements_covered": 93.97590361445783,
+        "percent_statements_covered_display": "94"
+      },
+      "src/tracefoundry_ir/cli.py": {
+        "covered_lines": 0,
+        "num_statements": 82,
+        "percent_covered": 0.0,
+        "percent_covered_display": "0",
+        "missing_lines": 82,
+        "excluded_lines": 0,
+        "percent_statements_covered": 0.0,
+        "percent_statements_covered_display": "0"
+      },
+      "src/tracefoundry_ir/models.py": {
+        "covered_lines": 71,
+        "num_statements": 71,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      },
+      "src/tracefoundry_ir/provider.py": {
+        "covered_lines": 69,
+        "num_statements": 78,
+        "percent_covered": 88.46153846153847,
+        "percent_covered_display": "88",
+        "missing_lines": 9,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.46153846153847,
+        "percent_statements_covered_display": "88"
+      },
+      "src/tracefoundry_ir/security.py": {
+        "covered_lines": 99,
+        "num_statements": 104,
+        "percent_covered": 95.1923076923077,
+        "percent_covered_display": "95",
+        "missing_lines": 5,
+        "excluded_lines": 0,
+        "percent_statements_covered": 95.1923076923077,
+        "percent_statements_covered_display": "95"
+      },
+      "src/tracefoundry_ir/service.py": {
+        "covered_lines": 441,
+        "num_statements": 495,
+        "percent_covered": 89.0909090909091,
+        "percent_covered_display": "89",
+        "missing_lines": 54,
+        "excluded_lines": 0,
+        "percent_statements_covered": 89.0909090909091,
+        "percent_statements_covered_display": "89"
+      },
+      "src/tracefoundry_ir/store.py": {
+        "covered_lines": 207,
+        "num_statements": 222,
+        "percent_covered": 93.24324324324324,
+        "percent_covered_display": "93",
+        "missing_lines": 15,
+        "excluded_lines": 0,
+        "percent_statements_covered": 93.24324324324324,
+        "percent_statements_covered_display": "93"
+      },
+      "src/tracefoundry_ir/tools.py": {
+        "covered_lines": 127,
+        "num_statements": 146,
+        "percent_covered": 86.98630136986301,
+        "percent_covered_display": "87",
+        "missing_lines": 19,
+        "excluded_lines": 0,
+        "percent_statements_covered": 86.98630136986301,
+        "percent_statements_covered_display": "87"
+      },
+      "src/tracefoundry_ir/verify.py": {
+        "covered_lines": 63,
+        "num_statements": 63,
+        "percent_covered": 100.0,
+        "percent_covered_display": "100",
+        "missing_lines": 0,
+        "excluded_lines": 0,
+        "percent_statements_covered": 100.0,
+        "percent_statements_covered_display": "100"
+      }
+    }
+  },
+  "ruff_lint": "PASS",
+  "ruff_format": "PASS",
+  "javascript_syntax": "PASS",
+  "pip_check": "PASS",
+  "browser": {
+    "browser": "firefox",
+    "result": "PASS",
+    "flows": [
+      "login",
+      "case",
+      "membership",
+      "stage",
+      "unapproved_block",
+      "review",
+      "execute",
+      "timeline",
+      "candidates",
+      "accepted_finding",
+      "two_person_export",
+      "download",
+      "audit",
+      "mobile_no_overflow"
+    ],
+    "page_errors": 0,
+    "local_environment_flags": {
+      "MOZ_DISABLE_CONTENT_SANDBOX": "1",
+      "MOZ_DISABLE_GMP_SANDBOX": "1"
+    },
+    "condition": "Executor browser namespace limitation; synthetic loopback tests only. CI uses default browser sandbox settings."
+  },
+  "runtime_dependency_audit": {
+    "result": "PASS",
+    "dependencies": 27,
+    "reported_vulnerabilities": 0,
+    "skipped": 0,
+    "report": "dependency-audit.json"
+  },
+  "build": {
+    "wheel": "PASS",
+    "sdist": "PASS",
+    "wheel_static_assets": "PASS",
+    "container_execution": "NOT_RUN"
+  },
+  "design_package": {
+    "schema_checks_passed": 19,
+    "schema_checks_failed": 0,
+    "original_files_hash_verified": 22,
+    "enterprise_acceptance_scenarios_unexecuted": 40
+  },
+  "not_claimed": [
+    "Live provider evaluation or model accuracy",
+    "Live vendor collector integration",
+    "Enterprise SSO/MFA, managed keys, WORM retention, independent witness",
+    "Production response connector execution",
+    "Multi-host load, failover, disaster recovery or penetration test",
+    "Accessibility certification",
+    "Docker image execution",
+    "Remote CI completion by this local report"
+  ]
+}

@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tracefoundry.example/schemas/approval.json",
+  "title": "approval",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "example_only": {
+      "type": "boolean"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "approve",
+            "reject",
+            "revise"
+          ]
+        },
+        "approver": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "subject_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "issuer": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "const": "human"
+            },
+            "roles_at_review": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "authentication_assurance": {
+              "type": "string",
+              "minLength": 1
+            },
+            "authentication_event_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "subject_id",
+            "issuer",
+            "kind",
+            "roles_at_review",
+            "authentication_assurance",
+            "authentication_event_id"
+          ]
+        },
+        "reviewed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "review_view_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "policy_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "approval_id",
+        "decision_id",
+        "decision_sha256",
+        "verdict",
+        "approver",
+        "reviewed_at",
+        "expires_at",
+        "rationale",
+        "review_view_sha256",
+        "policy_sha256"
+      ]
+    },
+    "attestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "unsigned_design_example",
+            "signed"
+          ]
+        },
+        "algorithm": {
+          "const": "ES256"
+        },
+        "key_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "signature_base64url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "state",
+        "algorithm",
+        "key_id",
+        "signature_base64url"
+      ]
+    }
+  },
+  "required": [
+    "example_only",
+    "body",
+    "attestation"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "example_only": {
+            "const": false
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "attestation": {
+            "properties": {
+              "state": {
+                "const": "signed"
+              },
+              "key_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "signature_base64url": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_-]{86}$"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

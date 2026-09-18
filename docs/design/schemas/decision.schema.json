@@ -1,0 +1,437 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://tracefoundry.example/schemas/decision.json",
+  "title": "decision",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "example_only": {
+      "type": "boolean"
+    },
+    "body": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "0.1"
+        },
+        "decision_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "proposal_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "tenant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "originating_human_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "proposed_by": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "human",
+                "agent",
+                "service"
+              ]
+            },
+            "issuer": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "issuer"
+          ]
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "policy_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "action": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "collect",
+                "analyze",
+                "accept_finding",
+                "reject_finding",
+                "classify",
+                "change_scope",
+                "respond",
+                "verify",
+                "restore",
+                "release_evidence",
+                "close_case",
+                "release_pack",
+                "change_policy"
+              ]
+            },
+            "tool": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "image_sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "input_schema_sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "pack_sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "version",
+                    "image_sha256",
+                    "input_schema_sha256",
+                    "pack_sha256"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "targets": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "parameters": {
+              "type": "object"
+            },
+            "parameters_artifact": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "artifact_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "storage_version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "artifact_id",
+                    "sha256",
+                    "storage_version"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "preconditions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "expected": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "observed_at": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": [
+                  "name",
+                  "expected",
+                  "observed_at"
+                ]
+              },
+              "minItems": 0
+            },
+            "verification_plan_ref": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "artifact_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "storage_version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "artifact_id",
+                    "sha256",
+                    "storage_version"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "rollback_plan_ref": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "artifact_id": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "storage_version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "artifact_id",
+                    "sha256",
+                    "storage_version"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "limits": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "max_rows": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_bytes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_seconds": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "max_tokens": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "max_cost_usd": {
+                  "type": "string",
+                  "pattern": "^[0-9]+(\\.[0-9]{1,4})?$"
+                }
+              },
+              "required": [
+                "max_rows",
+                "max_bytes",
+                "max_seconds",
+                "max_tokens",
+                "max_cost_usd"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "tool",
+            "targets",
+            "parameters",
+            "parameters_artifact",
+            "preconditions",
+            "verification_plan_ref",
+            "rollback_plan_ref",
+            "limits"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "artifact_id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              },
+              "storage_version": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "artifact_id",
+              "sha256",
+              "storage_version"
+            ]
+          },
+          "minItems": 0
+        },
+        "proposed_rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "alternatives": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "known_gaps": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "required_approvals": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "human_required": {
+              "const": true
+            },
+            "minimum_distinct_humans": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "eligible_roles": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              },
+              "minItems": 1
+            },
+            "required_role_groups": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "minItems": 1
+              },
+              "minItems": 1
+            },
+            "independent_of_proposer": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "human_required",
+            "minimum_distinct_humans",
+            "eligible_roles",
+            "required_role_groups",
+            "independent_of_proposer"
+          ]
+        }
+      },
+      "required": [
+        "schema_version",
+        "decision_id",
+        "proposal_version",
+        "tenant_id",
+        "case_id",
+        "originating_human_id",
+        "proposed_by",
+        "created_at",
+        "expires_at",
+        "policy_sha256",
+        "action",
+        "evidence_refs",
+        "proposed_rationale",
+        "alternatives",
+        "known_gaps",
+        "required_approvals"
+      ]
+    },
+    "digest_algorithm": {
+      "const": "SHA-256-RFC8785-TFIR-DECISION-v1"
+    },
+    "decision_sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    }
+  },
+  "required": [
+    "example_only",
+    "body",
+    "digest_algorithm",
+    "decision_sha256"
+  ]
+}

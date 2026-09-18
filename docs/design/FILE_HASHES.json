@@ -1,0 +1,29 @@
+{
+  "algorithm": "SHA-256",
+  "signed": false,
+  "scope": "Package file checksums only; not an authenticated provenance attestation",
+  "files": {
+    "README.md": "a1b7f9ea5d1f7850d61b509c19592f0df0706ca20c4360ea7c37de9c3166fccd",
+    "TraceFoundry_IR_Cybersecurity_Tool_Design.docx": "16ab11cb5914b3e186b16df002be2f8f5f2fd22e3303915c54ca48ca2aec03a0",
+    "TraceFoundry_IR_Design.md": "5c4a6a4337728ebde6377719f0022ba1d5ec39d977254f08476fb114aa1e54cf",
+    "contracts/integrity_and_signing.md": "f2eebab551a4bb712ea4dbacf923c318bef9eca0f756887b07bce99c21454390",
+    "contracts/runtime_enforcement.md": "2df71c725f6a2f59b2184448ffa1d355bdee5bde81ecc0acc3cb3538c67fbae1",
+    "diagrams/approval.png": "31c27856e3152a20f0839daaa4410e19c07efc014ce2a27fabc10563b7fdb614",
+    "diagrams/architecture.png": "81b18c30ca0c7d8f046e36838fa54af4137a3331b235300fe1b3bee335e66675",
+    "diagrams/architecture_and_decisions.md": "5bd623c5b4e97f8006bdd56e6518ced32eef0e63d57001247e8bae1195ca0586",
+    "diagrams/canonical.json": "fc2f5cb30fabd73addaf37f321429d6f998add4cfa52337d9a6f75a7750d841f",
+    "examples/approval.example.json": "a671a8bd4dcb2685188f255c98cc4eeb31c8ecec760f4447b4f63c05f358cf87",
+    "examples/audit-event.example.json": "f4a8d341a325969df250f221b1f2339109b7b2f68afc2f1629f32c8816ae8e4a",
+    "examples/decision.example.json": "2f15da573d8f99e163736a0cc82f56d9b9c47b70f40abb9025b9c2ca9d4e5515",
+    "examples/evidence.example.json": "fab32003e75a3bc0d0f85b7f71352e0940abf91be8fb74c8483d4c681343ad68",
+    "examples/synthetic-evidence.json": "8a253fd29578321073abe1ac3be45588004dbbd55e30340ba4d257ba34828ad8",
+    "schemas/approval.schema.json": "c8b461622041863be08cc47a693a85b2cf99650dce860f5949dbbbdec3f23448",
+    "schemas/audit-event.schema.json": "c8d0ad349778fb62d3176c57ea7fa0c1479e7bc1da80eee6728ce5c20a3f7b36",
+    "schemas/decision.schema.json": "2fe2c0096d4584087aa685cdaf6b8e35e0626230a3598bb6a4b05846dfab1163",
+    "schemas/evidence.schema.json": "f93b08daf64e4c2be47508d868a6f849dcd32ffc83ed042cb84bc6bf2cb36dd2",
+    "verification/acceptance_catalog.json": "9d4caf0649480deaefd4b13a382355aba149d13203716a0152584f5fb9854ed3",
+    "verification/review_notes.md": "d850eb5520220a28c3029f02006249efb811ff41eea97a30130473fcdcfbdf10",
+    "verification/validate_design.py": "5ec57594e50bc0c81d6d8722d14606a4bd10084bff069a91fb5429646928e04b",
+    "verification/validation_report.json": "fabe50533e0cf1dd2d45bbef8fdbfe84746c113ea6ad1da55331f79a942cbace"
+  }
+}

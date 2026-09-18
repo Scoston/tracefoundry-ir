@@ -1,0 +1,84 @@
+{
+  "example_only": true,
+  "body": {
+    "schema_version": "0.1",
+    "decision_id": "D-001",
+    "proposal_version": 1,
+    "tenant_id": "TENANT-EXAMPLE",
+    "case_id": "CASE-001",
+    "originating_human_id": "analyst-example",
+    "proposed_by": {
+      "id": "planner-example",
+      "kind": "agent",
+      "issuer": "example-identity-provider"
+    },
+    "created_at": "2026-09-18T10:00:00Z",
+    "expires_at": "2026-09-18T10:10:00Z",
+    "policy_sha256": "4dd1f3c0d052b920a867c4d3802cf5fcea03b1ed8ce028e1e48f0231d225cec0",
+    "action": {
+      "kind": "analyze",
+      "tool": {
+        "name": "build_timeline",
+        "version": "0.1.0-design",
+        "image_sha256": "7ba451133c403e85ee98073f28fd640bc9aa5000f0d6fce0f0b06ff7ac4cd9c5",
+        "input_schema_sha256": "5c8f88783094931ce897734b1c244b0b61a86cc9a57d284bd1f667eb8ee317f8",
+        "pack_sha256": "c5b93a52ccc0d8b4817dbf9d3dd948e1cd6c94f54b05cb677b9f57b504eb2421"
+      },
+      "targets": [
+        "CASE-001/E-001"
+      ],
+      "parameters": {
+        "evidence_ids": [
+          "E-001"
+        ],
+        "ordering": "timestamp_then_native_id"
+      },
+      "parameters_artifact": null,
+      "preconditions": [
+        {
+          "name": "evidence_manifest",
+          "expected": "8a253fd29578321073abe1ac3be45588004dbbd55e30340ba4d257ba34828ad8",
+          "observed_at": "2026-09-18T10:00:00Z"
+        }
+      ],
+      "verification_plan_ref": null,
+      "rollback_plan_ref": null,
+      "limits": {
+        "max_rows": 100,
+        "max_bytes": 1000000,
+        "max_seconds": 30,
+        "max_tokens": 0,
+        "max_cost_usd": "1.00"
+      }
+    },
+    "evidence_refs": [
+      {
+        "artifact_id": "E-001",
+        "sha256": "8a253fd29578321073abe1ac3be45588004dbbd55e30340ba4d257ba34828ad8",
+        "storage_version": "example-version-1"
+      }
+    ],
+    "proposed_rationale": "Create a candidate timeline from the explicitly named preserved record. This fixture is not a vendor log schema.",
+    "alternatives": [
+      "Review the raw record manually."
+    ],
+    "known_gaps": [
+      "Single synthetic event only; no identity attribution can be established."
+    ],
+    "required_approvals": {
+      "human_required": true,
+      "minimum_distinct_humans": 1,
+      "eligible_roles": [
+        "case_analyst"
+      ],
+      "required_role_groups": [
+        [
+          "case_analyst"
+        ]
+      ],
+      "independent_of_proposer": false
+    }
+  },
+  "digest_algorithm": "SHA-256-RFC8785-TFIR-DECISION-v1",
+  "decision_sha256": "505f71a6d886b8df3fbc938763369d664211061070a409c0e593c4bc05c88dd5"
+}
