@@ -4,7 +4,7 @@ import re
 import zipfile
 from pathlib import PurePosixPath
 
-from .security import digest, sha256, strict_json, verify_signature
+from .security import canonical, digest, sha256, strict_json, verify_signature
 from .tools import matching_roles
 
 
@@ -82,6 +82,59 @@ def verify_export(path, audit_key: bytes, approval_key: bytes, expected_checkpoi
                 verify_signature(approval, "TFIR-APPROVAL-v1", approval_key),
                 "Historical approval signature failed",
             )
+        # A valid hash over a projection is insufficient: bind its records back to the ledger.
+        by_event = {}
+        for event in events:
+            by_event.setdefault(event["body"]["event"], []).append(event["body"])
+        proposed = {
+            e["payload"]["decision_id"]: e["payload"] for e in by_event.get("decision.proposed", [])
+        }
+        require(
+            len(snapshot["decisions"]) == len(proposed)
+            and {d["id"] for d in snapshot["decisions"]} == set(proposed),
+            "Decision history omitted or duplicated",
+        )
+        for record in snapshot["decisions"]:
+            require(
+                record["id"] in proposed
+                and proposed[record["id"]]["decision_digest"] == record["digest"]
+                and record["case_id"] == ledger,
+                "Decision history binding failed",
+            )
+        reviews = {e["payload"]["approval_id"]: e for e in by_event.get("decision.reviewed", [])}
+        require(
+            len(snapshot["approvals"]) == len(reviews)
+            and {a["body"]["id"] for a in snapshot["approvals"]} == set(reviews),
+            "Review history omitted or duplicated",
+        )
+        for approval in snapshot["approvals"]:
+            body = approval["body"]
+            record = reviews.get(body["id"])
+            require(
+                record is not None
+                and record["payload"]["attestation_sha256"] == sha256(canonical(approval))
+                and record["actor"] == body["subject"]
+                and body["case_id"] == ledger,
+                "Review history binding failed",
+            )
+        preserved = {
+            e["payload"]["artifact_id"]: e["payload"]
+            for e in by_event.get("artifact.preserved", [])
+        }
+        selected = [a["id"] for a in snapshot["artifacts"]]
+        omitted = snapshot["omitted_artifact_ids"]
+        require(
+            len(selected) == len(set(selected))
+            and len(omitted) == len(set(omitted))
+            and not set(selected) & set(omitted)
+            and set(selected) | set(omitted) == set(preserved),
+            "Evidence selection or omission manifest changed",
+        )
+        for artifact in snapshot["artifacts"]:
+            require(
+                preserved[artifact["id"]]["metadata_sha256"] == sha256(canonical(artifact)),
+                "Evidence metadata history binding failed",
+            )
         decision = authority["decision"]
         require(
             digest("TFIR-DECISION-v1", decision["body"]) == decision["digest"],
@@ -90,6 +143,11 @@ def verify_export(path, audit_key: bytes, approval_key: bytes, expected_checkpoi
         require(
             decision["body"]["tool"] == "export_case" and decision["body"]["case_id"] == ledger,
             "Wrong release action",
+        )
+        require(
+            sorted(decision["body"]["arguments"]["artifact_ids"]) == sorted(selected)
+            and decision["body"]["tenant"] == snapshot["case"]["tenant"],
+            "Release selection or tenant changed",
         )
         require(
             decision["body"]["binding"]["snapshot_sha256"] == sha256(snapshot_bytes),
@@ -105,6 +163,12 @@ def verify_export(path, audit_key: bytes, approval_key: bytes, expected_checkpoi
             and receipt["body"]["snapshot_sha256"] == sha256(snapshot_bytes)
             and receipt["body"]["recipient"] == decision["body"]["arguments"]["recipient"],
             "Release receipt binding failed",
+        )
+        require(
+            decision["body"]["created_at"]
+            <= receipt["body"]["released_at"]
+            <= decision["body"]["expires_at"],
+            "Release outside decision lifetime",
         )
         reviewers = []
         approval_ids = []

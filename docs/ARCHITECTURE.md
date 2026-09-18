@@ -1,6 +1,6 @@
 # Runtime architecture
 
-This document describes the code in version 0.1. The complete proposed enterprise architecture remains in `design/TraceFoundry_IR_Design.md` and its Word counterpart.
+This document describes the code in version 0.2. The complete proposed enterprise architecture remains in `design/TraceFoundry_IR_Design.md` and its Word counterpart.
 
 ## Components
 
@@ -13,6 +13,7 @@ This document describes the code in version 0.1. The complete proposed enterpris
 | Fixed tool registry | `tools.py`, `models.py` | Allowlisted operations and strict argument schemas; importers, bounded queries, declarative matching |
 | Optional model adapter | `provider.py` | Approved external disclosure, fixed prompts, bounded request/response sizes, no tools, no redirects, validated candidates |
 | Offline verifier | `verify.py` | Archive path/size checks, byte hashes, ledger, independently supplied checkpoint/key comparison, release attestations |
+| Local maintenance | `maintenance.py` | Whole-state diagnostics, encrypted signed backups, verified restore without overwrites or replay |
 | Analyst console | `static/` | Case, evidence, review, result, pack, and audit workflows; inert evidence rendering |
 
 All components currently share one application process, SQLite database, filesystem, and local key custodian. Logical component boundaries are implemented; independent enterprise trust domains are not.
@@ -31,7 +32,7 @@ All components currently share one application process, SQLite database, filesys
 
 SQLite commit and filesystem checkpoint publication are not atomic. A crash or write error between them can produce a checkpoint mismatch. This is a blocking integrity condition, not a prompt to regenerate the witness silently. Preserve both states and reconcile from a independently retained checkpoint and backup.
 
-An interrupted external call may have been billed or processed remotely. It is marked `OUTCOME_UNKNOWN`; it is never retried automatically. `tracefoundry recover` is an explicit operator command that changes abandoned `RUNNING` executions to `OUTCOME_UNKNOWN`, with no connector call. Version 0.1 does not have a reconciliation-resolution tool; a supervisor cannot close a case with unresolved executions. Track resolution outside the application and implement a reviewed reconciliation workflow before using this path operationally.
+An interrupted external call may have been billed or processed remotely. It is marked `OUTCOME_UNKNOWN`; it is never retried automatically. `tracefoundry recover` is an explicit operator command that changes abandoned `RUNNING` executions to `OUTCOME_UNKNOWN`, with no connector call. A process-shared dispatch lock prevents recovery from racing active work. The `reconcile_execution` tool requires selected evidence and two distinct reviews, including a supervisor. It records an assessment without changing the original outcome or authorizing replay. Closure rejects unknown executions without a reviewed assessment and finding challenges without a reviewed disposition.
 
 ## Record formats
 
@@ -58,3 +59,5 @@ Audit records contain identifiers, policy facts, digests, timestamps, and actor 
 | Login and review failures | Five failures per bucket per 15 minutes |
 
 These are explicit local bounds, not capacity, latency, model-token accuracy, or annual compute-budget guarantees.
+
+Audit responses use bounded pages pinned to a retained checkpoint. Ledger verification still scans local history; pagination bounds response size, not total verification cost. Backup takes the same state lock and refuses an active dispatch. Restore requires a separately trusted audit key and archive hash, checks a signed per-file inventory, and issues new identity-history revisions to invalidate restored cached authority.

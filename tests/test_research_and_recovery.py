@@ -109,17 +109,26 @@ def test_invalid_time_window_is_rejected_as_input(harness):
     assert result.status_code == 422
 
 
-def test_recovery_records_unknown_without_repeating_work(harness):
+def test_recovery_records_unknown_without_repeating_work(harness, monkeypatch):
     h = harness
     decision = h.propose(
         "record_gap", {"description": "A synthetic coverage gap", "affected_scope": "logs"}
     )
     h.review(decision)
-    result = h.execute(decision).json()
-    # Emulate a process dying with a durable RUNNING intent. Recovery must not call a tool.
-    with h.store.connect() as c:
-        c.execute("UPDATE executions SET state='RUNNING',result=NULL WHERE id=?", (result["id"],))
-        c.commit()
+
+    class ProcessStopped(BaseException):
+        pass
+
+    def stop_before_tool(*args):
+        raise ProcessStopped()
+
+    # Stop after a real durable intent, before any terminal receipt or local side effect.
+    with monkeypatch.context() as patch:
+        patch.setattr(h.app.state.service, "_local", stop_before_tool)
+        with pytest.raises(ProcessStopped):
+            h.app.state.service.execute(
+                h.store.session(h.alice.cookies.get("tfir_session")), h.case, decision["body"]["id"]
+            )
     assert h.app.state.service.recover() == 1
     assert h.execute(decision).json()["state"] == "OUTCOME_UNKNOWN"
     with h.store.connect() as c:
@@ -130,4 +139,4 @@ def test_recovery_records_unknown_without_repeating_work(harness):
                 (h.case,),
             )
         ]
-    assert len(gaps) == 1
+    assert len(gaps) == 0

@@ -43,6 +43,7 @@ with httpx.Client(base_url="http://127.0.0.1:8000") as client:
 | --- | --- |
 | `POST /api/login` | Human session, CSRF token; rate-limited local password authentication |
 | `POST /api/logout` | Revoke the current session |
+| `POST /api/password` | Current-password authentication; replace the password and invalidate sessions and pending reviews |
 | `GET /api/me` | Current session identity and roles |
 | `GET /api/tools` | Current registry, strict argument schemas, code digest, role policy |
 | `GET /api/cases` | Only cases accessible to the current tenant/member |
@@ -55,7 +56,7 @@ with httpx.Client(base_url="http://127.0.0.1:8000") as client:
 | `POST /api/cases/{case}/decisions/{decision}/reviews` | Reauthenticate and sign a review of the supplied exact digest |
 | `POST /api/cases/{case}/approvals/{approval}/revoke` | Reviewer or supervisor revocation with a reason |
 | `POST /api/cases/{case}/decisions/{decision}/execute` | Mandatory gateway; unique execution intent and stable result identity |
-| `GET /api/cases/{case}/audit` | Case ledger and signed local checkpoint; access is audited |
+| `GET /api/cases/{case}/audit` | Bounded ledger page and its signed retained checkpoint; access is audited |
 | `GET /api/cases/{case}/artifacts/{artifact}` | Audited exact-byte retrieval; formal exports require the named recipient and a still-valid grant |
 
 State-changing requests require `X-CSRF-Token`. Cross-origin requests are rejected. JSON duplicate keys, nonfinite numbers, unknown typed request fields, arbitrary SQL, and unregistered operations are not accepted. Password and evidence inputs are not echoed in validation errors.
@@ -69,3 +70,19 @@ Role policy is server-owned. One analyst or supervisor can authorize local reads
 Execution returns `RUNNING`, `COMPLETED`, `FAILED`, or `OUTCOME_UNKNOWN` with an execution identifier. A completed model request can still have `review_status: rejected_by_validator`; this means the exchange was recorded, not that the claims were accepted. Repeated execution requests return the same execution state and never trigger an automatic retry.
 
 Typical errors: 401 invalid/expired session; 403 missing authority or invalid review; 404 unavailable case/reference; 409 stale policy, rejected decision, duplicate review, or incompatible state; 410 expired decision; 413 size limit; 422 invalid input/scope; 429 rate limit; 503 audit/integrity/infrastructure failure. Always inspect the machine-readable `error` and existing execution state before proposing another operation.
+
+## Reconciliation and finding review
+
+| Tool | Exact arguments | Required reviewers |
+| --- | --- | --- |
+| `reconcile_execution` | `execution_id`, `artifact_ids`, `assessment`, `conclusion`, `residual_uncertainty` | Analyst/supervisor plus a different supervisor |
+| `challenge_finding` | `finding_id`, `explanation`, `citations` | Analyst or supervisor |
+| `resolve_challenge` | `challenge_id`, `disposition`, `explanation`, `citations` | Analyst/supervisor plus a different supervisor |
+
+Reconciliation assessment is `confirmed_no_external_effect`, `confirmed_external_effect`, or `unable_to_determine`. It records human interpretation of selected evidence, not independent proof of an external effect. The original execution remains unknown. Challenge disposition is `finding_upheld`, `finding_withdrawn`, or `uncertainty_retained`. Neither operation rewrites original records or runs a response connector. Case detail and exports include the separate records and authority references.
+
+## Audit pagination
+
+Use `?limit=100` (range 1–500). If `page.has_more` is true, request `?limit=100&before=NEXT_BEFORE&through=THROUGH` using the returned values. Keep `through` fixed while reading older pages. This preserves the same signed checkpoint even when new access events are appended. Pages contain chronological subsets, not a standalone full-ledger verification proof; assemble the full sequence and use independent trust material for offline verification.
+
+Password change accepts only `current_password` and `new_password`. It requires the session CSRF token and returns `password_changed` and `sessions_invalidated`; the caller must log in again. No endpoint accepts an arbitrary target username for browser password changes.

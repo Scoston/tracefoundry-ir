@@ -15,6 +15,11 @@ class Login(StrictModel):
     password: Annotated[str, Field(min_length=1, max_length=256)]
 
 
+class PasswordChange(StrictModel):
+    current_password: Annotated[str, Field(min_length=1, max_length=256)]
+    new_password: Annotated[str, Field(min_length=14, max_length=256)]
+
+
 class CaseCreate(StrictModel):
     title: Short
     description: Annotated[str, Field(min_length=1, max_length=3000)]
@@ -111,3 +116,25 @@ class DraftPackArgs(PromoteArgs):
 
 class RunPackArgs(ArtifactArgs):
     pack_id: Identifier
+
+
+class ReconcileArgs(ArtifactArgs):
+    execution_id: Identifier
+    assessment: Literal[
+        "confirmed_no_external_effect", "confirmed_external_effect", "unable_to_determine"
+    ]
+    conclusion: Annotated[str, Field(min_length=20, max_length=4000)]
+    residual_uncertainty: Annotated[str, Field(min_length=8, max_length=2000)]
+
+
+class ChallengeArgs(StrictModel):
+    finding_id: Identifier
+    explanation: Annotated[str, Field(min_length=20, max_length=4000)]
+    citations: Annotated[list[Citation], Field(min_length=1, max_length=30)]
+
+
+class ResolveChallengeArgs(StrictModel):
+    challenge_id: Identifier
+    disposition: Literal["finding_upheld", "finding_withdrawn", "uncertainty_retained"]
+    explanation: Annotated[str, Field(min_length=20, max_length=4000)]
+    citations: Annotated[list[Citation], Field(min_length=1, max_length=30)]

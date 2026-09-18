@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import json
+import math
 import os
 import secrets
 from datetime import UTC, datetime
@@ -44,7 +45,15 @@ def strict_json(data: str | bytes):
     def invalid(value):
         raise ValueError(f"Non-finite JSON value: {value}")
 
-    return json.loads(data, object_pairs_hook=pairs, parse_constant=invalid)
+    def finite_float(value):
+        result = float(value)
+        if not math.isfinite(result):
+            invalid(value)
+        return result
+
+    return json.loads(
+        data, object_pairs_hook=pairs, parse_constant=invalid, parse_float=finite_float
+    )
 
 
 def secret_write(path: Path, data: bytes, *, replace: bool = False):

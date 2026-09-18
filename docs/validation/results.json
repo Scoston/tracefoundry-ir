@@ -1,53 +1,60 @@
 {
   "schema": "tracefoundry.local-validation.v1",
-  "recorded_at": "2026-09-18T14:07:41.356583+00:00",
-  "scope": "Local reference application and preserved design package; no enterprise certification",
+  "version": "0.2.0",
+  "recorded_at": "2026-09-18T14:49:20.533759+00:00",
+  "scope": "Local application regression, UI, maintenance and packaging checks; remote CI is recorded by GitHub Actions",
   "environment": {
     "python": "3.12.14",
     "platform": "Linux",
     "browser": "Firefox via Playwright"
   },
-  "runtime_registry_sha256": "94cdcf6c238c2d1df0492c782ffbb5de6724617a6c2abdf9fd32e0878936ad2a",
+  "runtime_registry_sha256": "664c35a0a54892cba999cd97e1fec5e587ed6c5609d123472215dd588322f9fe",
   "tested_files_sha256": {
-    "scripts/browser_acceptance.py": "f448f01bcaece9e3a74e89a29467b369a1f1dcfc35e4fbbd33534a019749b350",
+    "scripts/browser_acceptance.py": "f04fa475e1b540d113f705915cfac8699886066611ca9cc8cd6fa61dd3610f8e",
+    "scripts/container_acceptance.py": "8a48443597f10aed62c12cdc3f38cf9395a17d89b0cc81737baff5e5d01c24fe",
     "scripts/verify_design_package.py": "33ae95e0f6cad3f532213944cb4b111929aacc72bf19c20c722f3a55b5526030",
-    "src/tracefoundry_ir/__init__.py": "72b17b96d83fd1d5cdc944e8ad3406dd1831ad5af2449c8059e82e753f2e1baa",
-    "src/tracefoundry_ir/app.py": "72f18b273da98992da0c7554f7eb15e200b959fdf1e7f451ed45881db02f227c",
-    "src/tracefoundry_ir/cli.py": "7d35eff53182628fddb2c5b215f4f79bf80432f44fcd5d9ea58f146f0b309de2",
-    "src/tracefoundry_ir/models.py": "3213f1bba1ebf2cbe113b52763b06068efd96e269c123ab17da7776d761e5874",
+    "src/tracefoundry_ir/__init__.py": "1ddb89b15c15f10bf7459975f95396421b6b544735870822d5bb5af83098d73e",
+    "src/tracefoundry_ir/app.py": "5e5f381ea62896188bf460575d47d6521696958df861bf676cae2cd2ccdfa09c",
+    "src/tracefoundry_ir/cli.py": "2bb4ab8778236b48d250c1e234abecd76d7075cb896a252a78febfab75c325a8",
+    "src/tracefoundry_ir/maintenance.py": "e6ccbfe91ee0fbae54227d0de392260fe98d3ba391985ec16cc70c68ab0d8ded",
+    "src/tracefoundry_ir/models.py": "aad5107260f5e6b451e09fcef11d46a4e9dfc00ed9b3de697b11ac352eba46cb",
     "src/tracefoundry_ir/provider.py": "d99bd9e2660deb0aefae8c0bd7d2c1893cf643efd4bde0ac2d8e6e9047ad921a",
-    "src/tracefoundry_ir/security.py": "b619d116d48b2afecea851bb0f2468c1bfaca6266e2407916dbea2f5cb03d32a",
-    "src/tracefoundry_ir/service.py": "58618e432e3ae91f9bbc5263a28dc00fcc13bf294b2fe892d10165ff7d49d94d",
-    "src/tracefoundry_ir/static/app.js": "ae2bf2df2745bfba5353a6c2727eed534e3e2c75844c80d06137269f429a32ac",
-    "src/tracefoundry_ir/static/index.html": "4c0aa7bc8ad8461e41bd84efba04b8bcdd1038f749485949ebc554183b3dbf05",
+    "src/tracefoundry_ir/security.py": "0d04d00969c008eabc65287a6c3bbbccf9a523350b5f83f37ccf13cf4da7d575",
+    "src/tracefoundry_ir/service.py": "6625effe608b81a52a55f7883c3a15772b046955cf3f8e81a46b67c026d1cc54",
+    "src/tracefoundry_ir/static/app.js": "2e8838319a3c4a9551b07e29dbdb9620f303152ffc37ed5f279e3792c197c1aa",
+    "src/tracefoundry_ir/static/index.html": "8be391d00fe45e73d960d5f0b5ea4ac65339566f1a17992b7e2f231f53a39dbc",
     "src/tracefoundry_ir/static/styles.css": "5667593572284af62c404f325963bb1e7e558a75a4b33b190ac85c222c2f2f4d",
-    "src/tracefoundry_ir/store.py": "584f697f054a0b6d06dc00483034d643b815c8639fd1089f872018f610c339db",
-    "src/tracefoundry_ir/tools.py": "7329948949576f90f750cf9a2559cac924703adb7f14ef85e48a5dee3897d1cf",
-    "src/tracefoundry_ir/verify.py": "812064a890384fdc3a346c1a2f24c20c5937181e4dbbce3d548c653bd32cfb77",
+    "src/tracefoundry_ir/store.py": "41888d8bbe92b336438e5d45af6881943e1e2778cb2c78b199bcc5ebdd44a64b",
+    "src/tracefoundry_ir/tools.py": "823bba40b9947ed8da0f9128e7eea276c3e1c5518d52586e098a99a2392ac740",
+    "src/tracefoundry_ir/verify.py": "a54917368cdc4f18fd7b3dc077b1cd6d0b0cc5634b5697b0d175f0a05d1455c7",
     "tests/conftest.py": "5112087d15c559eba2131b471019942127fa8363abb851e887c0cdfba84191f0",
+    "tests/test_cli.py": "6479abd7aa88d7cd0345b2d26b5f320ba0c39ea73e56ba21185745cb6f38d0c4",
     "tests/test_gateway.py": "54684f2392e903559752eed26c48e059440de4d948bfaa7e55eb0a2c3bf21dd8",
     "tests/test_http_and_tools.py": "b49eb5fc94c35ef05cb397f3e6cef5f86552dbc911347d81f79bac33b2b122a6",
     "tests/test_integrity.py": "d8ea78e0c70090586f7ea1edc744300e5c1f834a006173fd786addffcf247ea7",
-    "tests/test_research_and_recovery.py": "8fd69b780d0d6f998b06061eca47a7360374956a4312ebeac28b1f788401835a",
-    "pyproject.toml": "654f5de51e0da49f54795db1f046917bb146bc98783f0bf42c0a7e8c8068c217",
+    "tests/test_research_and_recovery.py": "7a4836b4c4888a2ea1aecf403ad2eb4eb295fd87508672ad631e737f7029f9dd",
+    "tests/test_review_completion.py": "0bc44c943901239156e53b1e3fa510342277d0d416fdfcbeba3376c96a9995e8",
+    "pyproject.toml": "720c3afb4b81e4aeb5a177c575348eeec188ea7fec43ed8c532388c6a853e688",
     "requirements.lock": "af33dddccc78e3f7cdafe485b93cd57fb800f2d5c5a993b882f2d0ea5cf3d7ab",
-    "requirements-dev.lock": "e2641a984d8520a07f63e85f24b2ae061a77e3076eff7f4330ded786e11b04de"
+    "requirements-dev.lock": "e2641a984d8520a07f63e85f24b2ae061a77e3076eff7f4330ded786e11b04de",
+    "Dockerfile": "322d0226e230742d0e82a3d25feffc88852e24f21feb5f92ca045c80d4e8801e",
+    ".github/workflows/ci.yml": "6d3bb7cddedf500885c001593eba2f67d10a29429b0bdb2e8590121956e51948"
   },
   "pytest": {
-    "passed": 84,
+    "passed": 118,
     "failures": 0,
     "errors": 0,
     "skipped": 0,
-    "seconds": 31.02,
+    "seconds": 48.165,
     "warnings": [
       "Starlette httpx test-client deprecation",
       "AnyIO BlockingPortal alias deprecation"
     ]
   },
   "statement_coverage": {
-    "covered": 1234,
-    "statements": 1428,
-    "percent": 86.41456582633053,
+    "covered": 1702,
+    "statements": 1872,
+    "percent": 90.91880341880342,
     "files": {
       "src/tracefoundry_ir/__init__.py": {
         "covered_lines": 1,
@@ -60,28 +67,38 @@
         "percent_statements_covered_display": "100"
       },
       "src/tracefoundry_ir/app.py": {
-        "covered_lines": 156,
-        "num_statements": 166,
-        "percent_covered": 93.97590361445783,
+        "covered_lines": 163,
+        "num_statements": 173,
+        "percent_covered": 94.21965317919076,
         "percent_covered_display": "94",
         "missing_lines": 10,
         "excluded_lines": 0,
-        "percent_statements_covered": 93.97590361445783,
+        "percent_statements_covered": 94.21965317919076,
         "percent_statements_covered_display": "94"
       },
       "src/tracefoundry_ir/cli.py": {
-        "covered_lines": 0,
-        "num_statements": 82,
-        "percent_covered": 0.0,
-        "percent_covered_display": "0",
-        "missing_lines": 82,
+        "covered_lines": 97,
+        "num_statements": 123,
+        "percent_covered": 78.86178861788618,
+        "percent_covered_display": "79",
+        "missing_lines": 26,
         "excluded_lines": 0,
-        "percent_statements_covered": 0.0,
-        "percent_statements_covered_display": "0"
+        "percent_statements_covered": 78.86178861788618,
+        "percent_statements_covered_display": "79"
+      },
+      "src/tracefoundry_ir/maintenance.py": {
+        "covered_lines": 140,
+        "num_statements": 159,
+        "percent_covered": 88.0503144654088,
+        "percent_covered_display": "88",
+        "missing_lines": 19,
+        "excluded_lines": 0,
+        "percent_statements_covered": 88.0503144654088,
+        "percent_statements_covered_display": "88"
       },
       "src/tracefoundry_ir/models.py": {
-        "covered_lines": 71,
-        "num_statements": 71,
+        "covered_lines": 88,
+        "num_statements": 88,
         "percent_covered": 100.0,
         "percent_covered_display": "100",
         "missing_lines": 0,
@@ -100,33 +117,33 @@
         "percent_statements_covered_display": "88"
       },
       "src/tracefoundry_ir/security.py": {
-        "covered_lines": 99,
-        "num_statements": 104,
-        "percent_covered": 95.1923076923077,
+        "covered_lines": 104,
+        "num_statements": 110,
+        "percent_covered": 94.54545454545455,
         "percent_covered_display": "95",
-        "missing_lines": 5,
+        "missing_lines": 6,
         "excluded_lines": 0,
-        "percent_statements_covered": 95.1923076923077,
+        "percent_statements_covered": 94.54545454545455,
         "percent_statements_covered_display": "95"
       },
       "src/tracefoundry_ir/service.py": {
-        "covered_lines": 441,
-        "num_statements": 495,
-        "percent_covered": 89.0909090909091,
-        "percent_covered_display": "89",
-        "missing_lines": 54,
+        "covered_lines": 598,
+        "num_statements": 662,
+        "percent_covered": 90.33232628398791,
+        "percent_covered_display": "90",
+        "missing_lines": 64,
         "excluded_lines": 0,
-        "percent_statements_covered": 89.0909090909091,
-        "percent_statements_covered_display": "89"
+        "percent_statements_covered": 90.33232628398791,
+        "percent_statements_covered_display": "90"
       },
       "src/tracefoundry_ir/store.py": {
-        "covered_lines": 207,
-        "num_statements": 222,
-        "percent_covered": 93.24324324324324,
+        "covered_lines": 231,
+        "num_statements": 248,
+        "percent_covered": 93.14516129032258,
         "percent_covered_display": "93",
-        "missing_lines": 15,
+        "missing_lines": 17,
         "excluded_lines": 0,
-        "percent_statements_covered": 93.24324324324324,
+        "percent_statements_covered": 93.14516129032258,
         "percent_statements_covered_display": "93"
       },
       "src/tracefoundry_ir/tools.py": {
@@ -140,8 +157,8 @@
         "percent_statements_covered_display": "87"
       },
       "src/tracefoundry_ir/verify.py": {
-        "covered_lines": 63,
-        "num_statements": 63,
+        "covered_lines": 84,
+        "num_statements": 84,
         "percent_covered": 100.0,
         "percent_covered_display": "100",
         "missing_lines": 0,
@@ -172,6 +189,10 @@
       "two_person_export",
       "download",
       "audit",
+      "finding_challenge",
+      "two_person_challenge_resolution",
+      "password_change",
+      "logout_clears_case_data",
       "mobile_no_overflow"
     ],
     "page_errors": 0,
@@ -179,7 +200,7 @@
       "MOZ_DISABLE_CONTENT_SANDBOX": "1",
       "MOZ_DISABLE_GMP_SANDBOX": "1"
     },
-    "condition": "Executor browser namespace limitation; synthetic loopback tests only. CI uses default browser sandbox settings."
+    "condition": "Executor namespace restriction; synthetic loopback tests only. CI uses default Firefox sandbox settings."
   },
   "runtime_dependency_audit": {
     "result": "PASS",
@@ -191,23 +212,35 @@
   "build": {
     "wheel": "PASS",
     "sdist": "PASS",
-    "wheel_static_assets": "PASS",
-    "container_execution": "NOT_RUN"
+    "container_execution_local": "NOT_RUN_DOCKER_UNAVAILABLE",
+    "container_execution_ci": "SEE_GITHUB_ACTIONS"
   },
   "design_package": {
     "schema_checks_passed": 19,
-    "schema_checks_failed": 0,
     "original_files_hash_verified": 22,
     "enterprise_acceptance_scenarios_unexecuted": 40
   },
+  "maintenance": {
+    "encrypted_backup_restore": "PASS_SYNTHETIC",
+    "untrusted_restore_rejection": "PASS",
+    "overwrite_rejection": "PASS",
+    "identity_authority_reset": "PASS",
+    "doctor_tamper_detection": "PASS"
+  },
+  "remote_ci_matrix": [
+    "Python 3.11/Linux",
+    "Python 3.12/Linux",
+    "Python 3.13/Linux",
+    "Python 3.12/Windows",
+    "Firefox/Linux",
+    "Docker non-root API acceptance/Linux"
+  ],
   "not_claimed": [
-    "Live provider evaluation or model accuracy",
-    "Live vendor collector integration",
-    "Enterprise SSO/MFA, managed keys, WORM retention, independent witness",
-    "Production response connector execution",
-    "Multi-host load, failover, disaster recovery or penetration test",
-    "Accessibility certification",
-    "Docker image execution",
-    "Remote CI completion by this local report"
+    "Enterprise SSO/MFA and managed-key integrations",
+    "Independent checkpoint witness and WORM storage",
+    "Live vendor collection or production response",
+    "Live model qualification",
+    "Production-scale load or enterprise disaster recovery",
+    "Independent penetration test or accessibility certification"
   ]
 }

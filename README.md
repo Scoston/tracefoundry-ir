@@ -14,11 +14,13 @@ TraceFoundry IR is a working local application for preserving log exports, propo
 - Optional model assessment through an operator-configured HTTPS chat-completions-compatible endpoint. Nothing is sent to a model by default. Model output cannot approve or execute an operation.
 - Optional model drafting of declarative investigation packs from supplied research text, followed by validation and a separate two-person release decision.
 - P-256 signed approval attestations, current-role and case-membership checks, expiry, revocation, and single-use execution intents.
-- Two distinct eligible accounts for exports, external model disclosure, and research-pack release.
+- Two distinct eligible accounts for exports, external model disclosure, research-pack release, execution reconciliation, and finding-challenge resolution.
+- Finding challenges with preserved history, reviewed unknown-outcome assessments, and closure checks.
+- Password change/reset, authenticated identity revisions, encrypted backup/restore, and full local integrity diagnostics.
 - AES-GCM encrypted raw artifacts; SHA-256 acquisition hashes; resolvable record citations; RFC 8785 canonical decision and audit hashes.
 - Append-only audit tables, signed local checkpoints, checkpoint history, and an offline export verifier requiring independently obtained public keys and a checkpoint pin.
 
-**Version 0.1 is a local reference implementation.** Its services share one process and host. Enterprise SSO/MFA, managed signing keys, independently operated witnesses, WORM retention, native cloud collectors, production containment, multi-host workers, and independent security certification are not implemented. See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the boundary between the original design and this release.
+**Version 0.2 is a local reference implementation.** Its services share one process and host. Enterprise SSO/MFA, managed signing keys, independently operated witnesses, WORM retention, native cloud collectors, production containment, multi-host workers, and independent security certification are not implemented. See [implementation status](docs/IMPLEMENTATION_STATUS.md) for the boundary between the original design and this release.
 
 ## Run locally
 
@@ -91,7 +93,7 @@ python -m build
 
 The original design's 40 acceptance scenarios remain preserved as requirements. The executable tests and their measured results are separately reported in [validation](docs/VALIDATION.md); this repository does not equate design checks with production control validation.
 
-The recorded local run passed **84 tests**, the full Firefox analyst workflow, the pinned runtime dependency audit (27 dependencies, no reported vulnerabilities), and the wheel/source build. See the [measured results](docs/validation/results.json) for source hashes, coverage, conditions, and limits.
+The recorded 0.2 local run passed **118 tests**, the full Firefox analyst workflow, the pinned runtime dependency audit (27 dependencies, no reported vulnerabilities), and the wheel/source build. See the [review and completed work](docs/REVIEW_AND_COMPLETION.md), [upgrade instructions](docs/UPGRADING.md), and [measured results](docs/validation/results.json) for source hashes, coverage, conditions, and limits.
 
 ## Evidence and trust limits
 

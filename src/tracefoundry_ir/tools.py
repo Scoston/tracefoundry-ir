@@ -8,6 +8,21 @@ from .security import canonical, sha256, strict_json
 from .store import Fault
 
 REGISTRY = {
+    "reconcile_execution": (
+        models.ReconcileArgs,
+        [["analyst", "supervisor"], ["supervisor"]],
+        "Record an evidence-based assessment of an unknown execution; never retry or rewrite its original result",
+    ),
+    "challenge_finding": (
+        models.ChallengeArgs,
+        [["analyst", "supervisor"]],
+        "Challenge an accepted finding with preserved source citations",
+    ),
+    "resolve_challenge": (
+        models.ResolveChallengeArgs,
+        [["analyst", "supervisor"], ["supervisor"]],
+        "Review a finding challenge with a second human; retain the original claim and evidence",
+    ),
     "draft_pack": (
         models.DraftPackArgs,
         [["analyst", "supervisor"], ["supervisor"]],

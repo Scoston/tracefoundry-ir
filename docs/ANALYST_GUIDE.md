@@ -24,7 +24,7 @@ In **Decisions**, expand the exact scope. Check the source, targets or selection
 
 After sufficient reviews, choose **Execute approved operation**. The server rechecks current authority; the UI's review count is not the authorization decision. Expired or revoked approvals, changed roles, changed membership, a different policy/tool build, changed evidence, or an unhealthy audit checkpoint block dispatch.
 
-Every execution has a stable identifier. Repeating the request shows the same execution, not another tool run. `FAILED` needs investigation and a new proposal for any new attempt. `OUTCOME_UNKNOWN` means the platform cannot establish the remote outcome; do not assume the request failed or was safe to repeat. An operator must reconcile outside this release's limited workflow.
+Every execution has a stable identifier. Repeating the request shows the same execution, not another tool run. `FAILED` needs investigation and a new proposal for any new attempt. `OUTCOME_UNKNOWN` means the platform cannot establish the remote outcome; do not assume the request failed or was safe to repeat. Select **Propose reconciliation**, preserve independent verification evidence, and record what can and cannot be established. Two different eligible humans, including a supervisor, must approve it. The original unknown result remains unchanged and no retry is authorized.
 
 ## Assess evidence
 
@@ -50,3 +50,11 @@ A supervisor must approve a closure proposal that states the conclusion and resi
 ## Interpretation discipline
 
 Preserve contradictions and uncertainty. A source log can be inaccurate; a parse can omit semantics; a human can accept a weak claim. Integrity checks establish consistency against retained records and trust anchors. They do not establish that every relevant activity was logged or that a conclusion is correct.
+
+## Challenge an accepted finding
+
+Choose **Challenge finding**, identify source citations, and explain the conflicting evidence or inference. Approve and execute that challenge as a new decision. The original finding remains in the history. Choose **Propose challenge resolution** to uphold the finding, withdraw it, or retain uncertainty; this requires two distinct reviews including a supervisor. Case closure remains blocked until each challenge has a reviewed disposition. A valid citation does not by itself prove that the challenge is correct.
+
+## Change your password
+
+Use **Change password** in the account controls, supply your current password, and confirm a new password of at least 14 characters. All your sessions and pending approval authority are invalidated. Sign in again and create new proposals where fresh reviews are needed. Historical attestations remain preserved. If you cannot authenticate, the trusted host administrator can use `password-reset`; there is no email reset link.

@@ -189,6 +189,41 @@ def main():
                     assert download.value.suggested_filename.endswith(".zip")
                     page.get_by_role("button", name="Audit trail", exact=True).click()
                     expect(page.get_by_role("heading", name="Accountability trail")).to_be_visible()
+                    page.get_by_role("button", name="Findings", exact=True).click()
+                    page.get_by_role("button", name="Challenge finding", exact=True).first.click()
+                    page.get_by_label("explanation", exact=True).fill(
+                        "This record may reflect a legitimate maintenance change; assess the source context."
+                    )
+                    page.get_by_label("Purpose of this operation").fill(
+                        "Challenge the inference without altering the historical finding."
+                    )
+                    page.get_by_role("button", name="Submit for human review").click()
+                    expect(page.locator("#modal")).not_to_be_visible()
+                    sign_and_execute("reviewer-two")
+                    page.get_by_role("button", name="Findings", exact=True).click()
+                    page.get_by_role(
+                        "button", name="Propose challenge resolution", exact=True
+                    ).click()
+                    page.get_by_label("disposition", exact=True).select_option(
+                        "uncertainty_retained"
+                    )
+                    page.get_by_label("explanation", exact=True).fill(
+                        "Reviewers retain uncertainty because the synthetic source cannot establish intent."
+                    )
+                    page.get_by_label("Purpose of this operation").fill(
+                        "Resolve the challenge with explicit uncertainty and a second human review."
+                    )
+                    page.get_by_role("button", name="Submit for human review").click()
+                    expect(page.locator("#modal")).not_to_be_visible()
+                    sign_and_execute("reviewer-two", execute=False)
+                    page.get_by_role("button", name="Sign out", exact=False).click()
+                    login("analyst-one")
+                    page.get_by_role("button", name="Decisions", exact=True).click()
+                    sign_and_execute("analyst-one")
+                    page.get_by_role("button", name="Findings", exact=True).click()
+                    expect(page.get_by_text("uncertainty retained", exact=True)).to_be_visible()
+                    if screenshot_dir:
+                        page.screenshot(path=str(screenshot_dir / "challenges.png"), full_page=True)
                     page.get_by_role("button", name="Overview", exact=True).click()
                     page.set_viewport_size({"width": 390, "height": 844})
                     assert page.evaluate(
@@ -197,6 +232,17 @@ def main():
                     if screenshot_dir:
                         expect(page.locator("#toast")).not_to_be_visible(timeout=10000)
                         page.screenshot(path=str(screenshot_dir / "mobile.png"), full_page=True)
+                    page.get_by_role("button", name="Change password", exact=True).click()
+                    page.get_by_label("Current password", exact=True).fill(passwords["analyst-one"])
+                    passwords["analyst-one"] = secrets.token_urlsafe(24)
+                    page.get_by_label("New password", exact=True).fill(passwords["analyst-one"])
+                    page.get_by_label("Confirm new password", exact=True).fill(
+                        passwords["analyst-one"]
+                    )
+                    page.get_by_role("button", name="Save", exact=True).click()
+                    expect(page.locator("#login-view")).to_be_visible()
+                    expect(page.locator("#main-content")).to_be_empty()
+                    login("analyst-one")
                     assert not errors, errors
                     context.close()
                     browser.close()
@@ -219,6 +265,10 @@ def main():
                                 "two_person_export",
                                 "download",
                                 "audit",
+                                "finding_challenge",
+                                "two_person_challenge_resolution",
+                                "password_change",
+                                "logout_clears_case_data",
                                 "mobile_no_overflow",
                             ],
                             "page_errors": 0,

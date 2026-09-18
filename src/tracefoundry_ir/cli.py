@@ -3,6 +3,7 @@ import getpass
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from .security import sha256, strict_json
 from .store import Store
@@ -26,7 +27,31 @@ def main():
     )
     update.add_argument("--username", required=True)
     update.add_argument("--roles")
-    update.add_argument("--disable", action="store_true")
+    active = update.add_mutually_exclusive_group()
+    active.add_argument("--disable", action="store_true")
+    active.add_argument("--enable", action="store_true")
+    update.add_argument("--reason", required=True)
+    reset = sub.add_parser(
+        "password-reset",
+        help="Reset a local human credential and invalidate sessions and pending approvals",
+    )
+    reset.add_argument("--username", required=True)
+    reset.add_argument("--reason", required=True)
+    sub.add_parser(
+        "doctor",
+        help="Verify database, trust keys, all ledgers, evidence and recorded authority; never repair",
+    )
+    backup = sub.add_parser(
+        "backup", help="Create an encrypted, signed local backup while no tool is executing"
+    )
+    backup.add_argument("--out", required=True)
+    restore = sub.add_parser(
+        "restore",
+        help="Restore a trusted backup into a new data directory; never overwrite or retry tools",
+    )
+    restore.add_argument("archive")
+    restore.add_argument("--expected-sha256", required=True)
+    restore.add_argument("--audit-key", required=True)
     serve = sub.add_parser("serve", help="Start the analyst console")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", default=8000, type=int)
@@ -59,6 +84,18 @@ def main():
         )
         print(json.dumps(result, indent=2))
         return
+    if args.command == "restore":
+        from .maintenance import restore_backup
+
+        result = restore_backup(
+            Path(args.archive),
+            directory,
+            getpass.getpass("Backup passphrase: "),
+            args.expected_sha256,
+            Path(args.audit_key).read_bytes(),
+        )
+        print(json.dumps(result, indent=2))
+        return
     if args.command == "validate-pack":
         from .tools import validate_pack
 
@@ -84,19 +121,57 @@ def main():
         store.add_user(args.username, password, roles, args.tenant)
         print(f"Human account created: {args.username}. No operational decisions were approved.")
     elif args.command == "user-update":
+        if len(args.reason.strip()) < 8 or not (args.roles or args.disable or args.enable):
+            parser.error(
+                "Choose an account change and provide a reason of at least eight characters"
+            )
         Store(directory).change_user(
             args.username,
             roles=args.roles.split(",") if args.roles else None,
-            active=False if args.disable else None,
+            active=False if args.disable else True if args.enable else None,
+            reason=args.reason,
         )
-        print("Account updated; existing sessions invalidated.")
+        print("Account updated; existing sessions and pending approvals invalidated.")
+    elif args.command == "password-reset":
+        if len(args.reason.strip()) < 8:
+            parser.error("Provide a reason of at least eight characters")
+        password = getpass.getpass("New password (14+ characters): ")
+        if password != getpass.getpass("Confirm new password: "):
+            parser.error("Passwords differ")
+        Store(directory).change_user(args.username, password=password, reason=args.reason)
+        print(
+            "Password reset; sessions and pending approvals invalidated. Account activation was not changed."
+        )
+    elif args.command == "doctor":
+        from .maintenance import inspect_state
+
+        print(json.dumps(inspect_state(Store(directory)), indent=2))
+    elif args.command == "backup":
+        from .maintenance import create_backup
+
+        password = getpass.getpass("Backup passphrase (14+ characters): ")
+        if password != getpass.getpass("Confirm backup passphrase: "):
+            parser.error("Passphrases differ")
+        print(json.dumps(create_backup(Store(directory), Path(args.out), password), indent=2))
     elif args.command == "serve":
-        if args.host not in {"127.0.0.1", "localhost", "::1"} and (
-            os.getenv("TFIR_SECURE_COOKIES") != "true" or not os.getenv("TFIR_ORIGIN")
-        ):
-            parser.error(
-                "Non-loopback serving requires TFIR_SECURE_COOKIES=true and TFIR_ORIGIN behind TLS"
-            )
+        if args.host not in {"127.0.0.1", "localhost", "::1"}:
+            origin = urlsplit(os.getenv("TFIR_ORIGIN", ""))
+            allowed = os.getenv("TFIR_ALLOWED_HOSTS", "").split(",")
+            if (
+                os.getenv("TFIR_SECURE_COOKIES") != "true"
+                or origin.scheme != "https"
+                or not origin.hostname
+                or origin.hostname not in allowed
+                or "*" in allowed
+                or origin.username
+                or origin.password
+                or origin.path
+                or origin.query
+                or origin.fragment
+            ):
+                parser.error(
+                    "Non-loopback serving requires secure cookies, an exact HTTPS origin, and an explicit matching allowed host behind TLS"
+                )
         import uvicorn
 
         from .app import create_app

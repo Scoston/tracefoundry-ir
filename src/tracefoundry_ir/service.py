@@ -6,6 +6,7 @@ import sqlite3
 import zipfile
 from datetime import UTC, datetime, timedelta
 
+from filelock import Timeout
 from pydantic import ValidationError
 
 from . import models, tools
@@ -235,12 +236,14 @@ class Service:
         rows = []
         for artifact_id in artifact_ids:
             self._artifact(c, case_id, artifact_id)
-            chunks = [
-                strict_json(r[0])
-                for r in c.execute(
-                    "SELECT body FROM chunks WHERE artifact_id=? ORDER BY id", (artifact_id,)
-                )
-            ]
+            chunks = []
+            for r in c.execute(
+                "SELECT * FROM chunks WHERE artifact_id=? ORDER BY id", (artifact_id,)
+            ):
+                chunk = strict_json(r["body"])
+                if chunk.get("chunk_id") != r["id"] or chunk.get("artifact_id") != artifact_id:
+                    raise Fault(503, "normalized_locator_integrity_failed")
+                chunks.append(chunk)
             chunks.sort(key=lambda row: int(row["chunk_id"].rsplit(":", 1)[1]))
             imported = c.execute(
                 "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event')='evidence.normalized' AND json_extract(body,'$.payload.artifact_id')=?",
@@ -295,6 +298,7 @@ class Service:
 
     def _snapshot(self, c, case_id: str, artifact_ids: list[str]) -> dict:
         # This data is frozen before approvals, so later case changes cannot expand the export.
+        self._inventory(c, case_id)
         artifacts = [self._artifact(c, case_id, a)[0] for a in artifact_ids]
         events = self.store.audit_events(c, case_id)
         snapshot = {
@@ -304,7 +308,9 @@ class Service:
             "events": events,
             "checkpoint": strict_json(self.store.checkpoint_path(case_id).read_bytes()),
             "decisions": [
-                dict(r) for r in c.execute("SELECT * FROM decisions WHERE case_id=?", (case_id,))
+                {**d, "body": encoded(d["body"])}
+                for r in c.execute("SELECT id FROM decisions WHERE case_id=?", (case_id,))
+                for d in [self._decision(c, case_id, r[0])]
             ],
             "findings": [
                 self._finding(c, r)
@@ -316,6 +322,11 @@ class Service:
                 if r[0] not in artifact_ids
             ],
             "coverage_statement": "A selected case snapshot; source completeness is not proven. Local checkpoint is not an independent witness.",
+            "execution_reconciliations": self._workflow_records(c, case_id, "execution.reconciled"),
+            "finding_challenges": self._workflow_records(c, case_id, "finding.challenged"),
+            "challenge_resolutions": self._workflow_records(
+                c, case_id, "finding.challenge_resolved"
+            ),
         }
         snapshot["approvals"] = [
             strict_json(r[0])
@@ -325,11 +336,13 @@ class Service:
             )
         ]
         snapshot["revocations"] = [
-            dict(r)
-            for r in c.execute(
-                "SELECT revocations.* FROM revocations JOIN approvals ON approvals.id=revocations.approval_id JOIN decisions ON decisions.id=approvals.decision_id WHERE decisions.case_id=?",
-                (case_id,),
-            )
+            {
+                "approval_id": e["body"]["payload"]["approval_id"],
+                "actor": e["body"]["actor"],
+                "reason": e["body"]["payload"]["reason"],
+            }
+            for e in events
+            if e["body"]["event"] == "approval.revoked"
         ]
         return snapshot
 
@@ -347,6 +360,19 @@ class Service:
             case = self._case(c, case_id, actor, open_required=request.tool != "export_case")
             refs = self._references(c, case_id, args)
             binding = {}
+            if request.tool == "reconcile_execution":
+                target = self._unknown_execution(c, case_id, args["execution_id"])
+                binding = {"execution_sha256": sha256(canonical(target))}
+            if request.tool == "challenge_finding":
+                row = c.execute(
+                    "SELECT * FROM findings WHERE id=? AND case_id=?", (args["finding_id"], case_id)
+                ).fetchone()
+                if not row:
+                    raise Fault(404, "finding_not_found")
+                binding = {"finding_sha256": sha256(canonical(self._finding(c, row)))}
+            if request.tool == "resolve_challenge":
+                target = self._open_challenge(c, case_id, args["challenge_id"])
+                binding = {"challenge_sha256": sha256(canonical(target))}
             if request.tool == "draft_pack":
                 source = self._research(c, case_id, args["artifact_id"])
                 self.provider.prepare_pack(args["goal"], source)
@@ -380,6 +406,11 @@ class Service:
                 recipient = self.store.user(c, args["recipient"])
                 self._case(c, case_id, recipient)
                 snapshot = self._snapshot(c, case_id, args["artifact_ids"])
+                if (
+                    len(canonical(snapshot)) + sum(a["byte_count"] for a in snapshot["artifacts"])
+                    > 55_000_000
+                ):
+                    raise Fault(422, "export_exceeds_offline_verifier_budget")
                 frozen = self._save_artifact(
                     c,
                     case_id,
@@ -451,7 +482,52 @@ class Service:
         ).fetchone()
         if not receipt or strict_json(receipt[0])["payload"]["decision_digest"] != result["digest"]:
             raise Fault(503, "decision_history_mismatch")
+        reviews = self._reviews(c, result)
+        rejected = any(a["body"]["verdict"] == "reject" for a in reviews)
+        intent = c.execute(
+            "SELECT 1 FROM audit WHERE ledger=? AND json_extract(body,'$.event')='execution.intent' AND json_extract(body,'$.payload.decision_id')=?",
+            (case_id, decision_id),
+        ).fetchone()
+        expected = "REJECTED" if rejected else "CONSUMED" if intent else "PENDING"
+        if result["state"] != expected or (rejected and intent):
+            raise Fault(503, "decision_state_history_mismatch")
         return result
+
+    def _reviews(self, c, decision: dict) -> list[dict]:
+        """Use the same audited review records for presentation and enforcement."""
+        receipts = {
+            strict_json(r[0])["payload"]["approval_id"]: strict_json(r[0])
+            for r in c.execute(
+                "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event')='decision.reviewed' AND json_extract(body,'$.payload.decision_id')=?",
+                (decision["case_id"], decision["id"]),
+            )
+        }
+        rows = c.execute(
+            "SELECT * FROM approvals WHERE decision_id=?", (decision["id"],)
+        ).fetchall()
+        if set(receipts) != {r["id"] for r in rows}:
+            raise Fault(503, "review_history_incomplete")
+        envelopes = []
+        for row in rows:
+            envelope = strict_json(row["envelope"])
+            body = envelope.get("body", {})
+            receipt = receipts[row["id"]]
+            if (
+                not verify_signature(
+                    envelope, "TFIR-APPROVAL-v1", self.store.approval_signer.public_pem
+                )
+                or receipt["payload"]["attestation_sha256"] != sha256(canonical(envelope))
+                or body.get("id") != row["id"]
+                or body.get("decision_id") != decision["id"]
+                or body.get("decision_digest") != decision["digest"]
+                or body.get("case_id") != decision["case_id"]
+                or body.get("subject") != row["username"]
+                or body.get("subject") != receipt["actor"]
+                or body.get("verdict") != receipt["payload"]["verdict"]
+            ):
+                raise Fault(503, "review_history_integrity_failed")
+            envelopes.append(envelope)
+        return envelopes
 
     def _current(self, c, decision: dict):
         body = decision["body"]
@@ -481,12 +557,32 @@ class Service:
                 or sha256(canonical(strict_json(pack["body"]))) != body["binding"]["pack_sha256"]
             ):
                 raise Fault(409, "pack_changed")
+        if body["tool"] == "reconcile_execution":
+            target = self._unknown_execution(c, body["case_id"], body["arguments"]["execution_id"])
+            if sha256(canonical(target)) != body["binding"]["execution_sha256"]:
+                raise Fault(409, "reconciliation_target_changed")
+        if body["tool"] == "challenge_finding":
+            row = c.execute(
+                "SELECT * FROM findings WHERE id=? AND case_id=?",
+                (body["arguments"]["finding_id"], body["case_id"]),
+            ).fetchone()
+            if (
+                not row
+                or sha256(canonical(self._finding(c, row))) != body["binding"]["finding_sha256"]
+            ):
+                raise Fault(409, "challenged_finding_changed")
+        if body["tool"] == "resolve_challenge":
+            target = self._open_challenge(c, body["case_id"], body["arguments"]["challenge_id"])
+            if sha256(canonical(target)) != body["binding"]["challenge_sha256"]:
+                raise Fault(409, "challenge_changed")
 
     def review(self, actor: dict, case_id: str, decision_id: str, request: models.Review):
-        self.store.reauthenticate(actor, request.password)
+        authenticated_identity = self.store.reauthenticate(actor, request.password)
         with self.store.transaction(case_id) as c:
             self._case(c, case_id, actor)
             current = self.store.user(c, actor["username"])
+            if current["identity_event"] != authenticated_identity:
+                raise Fault(403, "identity_changed_during_review")
             decision = self._decision(c, case_id, decision_id)
             self._current(c, decision)
             if decision["digest"] != request.decision_digest:
@@ -508,6 +604,7 @@ class Service:
                 "auth_event": actor["auth_event"],
                 "authentication_method": "local_password_reauthenticated",
                 "roles_at_review": current["roles"],
+                "identity_event": current["identity_event"],
                 "policy_version": tools.POLICY,
                 "verdict": request.verdict,
                 "rationale": request.rationale,
@@ -542,21 +639,18 @@ class Service:
     def _approved(self, c, decision: dict) -> list[dict]:
         self._current(c, decision)
         reviewers, envelopes = [], []
-        for row in c.execute("SELECT * FROM approvals WHERE decision_id=?", (decision["id"],)):
-            envelope = strict_json(row["envelope"])
+        for envelope in self._reviews(c, decision):
             body = envelope["body"]
             if not verify_signature(
                 envelope, "TFIR-APPROVAL-v1", self.store.approval_signer.public_pem
             ):
                 raise Fault(403, "approval_signature_invalid")
             if (
-                body["id"] != row["id"]
-                or body["principal_kind"] != "human"
+                body["principal_kind"] != "human"
                 or body["decision_digest"] != decision["digest"]
                 or body["decision_id"] != decision["id"]
                 or body["case_id"] != decision["case_id"]
                 or body["tenant"] != decision["body"]["tenant"]
-                or body["subject"] != row["username"]
                 or body["policy_version"] != tools.POLICY
                 or body["verdict"] != "approve"
                 or body["expires_at"] <= now()
@@ -568,6 +662,8 @@ class Service:
             ).fetchone():
                 raise Fault(403, "approval_revoked")
             current = self.store.user(c, body["subject"])
+            if body.get("identity_event") != current["identity_event"]:
+                raise Fault(403, "approval_identity_changed")
             self._case(c, decision["case_id"], current)
             reviewers.append(current)
             envelopes.append(envelope)
@@ -670,17 +766,44 @@ class Service:
             self.store.audit(c, case_id, actor, "coverage.gap_declared", args)
             return {"gap": args}
         if tool == "close_case":
+            self._inventory(c, case_id)
+            reconciled = {
+                r["execution_id"]
+                for r in self._workflow_records(c, case_id, "execution.reconciled")
+            }
             open_runs = c.execute(
-                "SELECT COUNT(*) FROM executions JOIN decisions ON decisions.id=executions.decision_id WHERE decisions.case_id=? AND executions.state IN ('RUNNING','OUTCOME_UNKNOWN') AND decisions.id!=?",
+                "SELECT executions.* FROM executions JOIN decisions ON decisions.id=executions.decision_id WHERE decisions.case_id=? AND decisions.id!=?",
                 (case_id, decision["id"]),
-            ).fetchone()[0]
-            if open_runs:
+            ).fetchall()
+            if any(
+                self.execution_dict(c, r)["state"] in {"RUNNING", "OUTCOME_UNKNOWN"}
+                and r["id"] not in reconciled
+                for r in open_runs
+            ):
                 raise Fault(409, "unresolved_execution_blocks_closure")
+            resolved = {
+                r["challenge_id"]
+                for r in self._workflow_records(c, case_id, "finding.challenge_resolved")
+            }
+            if any(
+                r["id"] not in resolved
+                for r in self._workflow_records(c, case_id, "finding.challenged")
+            ):
+                raise Fault(409, "unresolved_finding_challenge_blocks_closure")
             c.execute("UPDATE cases SET closed=1 WHERE id=?", (case_id,))
             self.store.audit(
                 c, case_id, actor, "case.closed", {"decision_id": decision["id"], **args}
             )
             return {"closed": True, **args}
+        if tool in {"reconcile_execution", "challenge_finding", "resolve_challenge"}:
+            event = {
+                "reconcile_execution": "execution.reconciled",
+                "challenge_finding": "finding.challenged",
+                "resolve_challenge": "finding.challenge_resolved",
+            }[tool]
+            result = {"id": uid(), "decision_id": decision["id"], "recorded_at": now(), **args}
+            self.store.audit(c, case_id, actor, event, result)
+            return result
         if tool == "promote_pack":
             pack = tools.validate_pack(self._artifact(c, case_id, args["artifact_id"])[1])
             hashed = sha256(canonical(pack))
@@ -768,6 +891,13 @@ class Service:
         raise Fault(422, "unsupported_tool")
 
     def execute(self, actor: dict, case_id: str, decision_id: str) -> dict:
+        try:
+            with self.store.dispatch_lock:
+                return self._execute(actor, case_id, decision_id)
+        except Timeout as exc:
+            raise Fault(409, "another_operation_is_in_progress") from exc
+
+    def _execute(self, actor: dict, case_id: str, decision_id: str) -> dict:
         with self.store.transaction(case_id) as c:
             self._case(c, case_id, actor)
             decision = self._decision(c, case_id, decision_id)
@@ -908,11 +1038,12 @@ class Service:
             state = "OUTCOME_UNKNOWN" if remote_started else "FAILED"
             code = exc.code if isinstance(exc, Fault) else "tool_failed"
             with self.store.transaction(case_id) as c:
+                failure = {"error": code, "retry": "new_human_review_required"}
                 c.execute(
                     "UPDATE executions SET state=?,result=?,updated=? WHERE id=?",
                     (
                         state,
-                        encoded({"error": code, "retry": "new_human_review_required"}),
+                        encoded(failure),
                         now(),
                         execution_id,
                     ),
@@ -922,7 +1053,12 @@ class Service:
                     case_id,
                     actor,
                     "execution.failed",
-                    {"execution_id": execution_id, "state": state, "error": code},
+                    {
+                        "execution_id": execution_id,
+                        "state": state,
+                        "error": code,
+                        "result_sha256": sha256(canonical(failure)),
+                    },
                 )
         with self.store.connect() as c:
             return self.execution_dict(
@@ -982,9 +1118,126 @@ class Service:
                 or receipt["event"] == "execution.completed"
             ):
                 raise Fault(503, "execution_state_integrity_failed")
+            expected_failure = (
+                {"error": receipt["payload"]["error"], "retry": "new_human_review_required"}
+                if receipt["event"] == "execution.failed"
+                else None
+            )
+            if result["result"] != expected_failure:
+                raise Fault(503, "execution_failure_integrity_failed")
+            if "result_sha256" in receipt["payload"] and receipt["payload"][
+                "result_sha256"
+            ] != sha256(canonical(result["result"])):
+                raise Fault(503, "execution_failure_integrity_failed")
         else:
             raise Fault(503, "unknown_execution_state")
         return result
+
+    def _workflow_records(self, c, case_id: str, event: str) -> list[dict]:
+        tool = {
+            "execution.reconciled": "reconcile_execution",
+            "finding.challenged": "challenge_finding",
+            "finding.challenge_resolved": "resolve_challenge",
+        }[event]
+        records = []
+        for row in c.execute(
+            "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event')=? ORDER BY seq",
+            (case_id, event),
+        ):
+            record = strict_json(row[0])["payload"]
+            decision = self._decision(c, case_id, record["decision_id"])
+            execution = c.execute(
+                "SELECT * FROM executions WHERE decision_id=?", (decision["id"],)
+            ).fetchone()
+            if not execution or decision["body"]["tool"] != tool:
+                raise Fault(503, "workflow_authority_missing")
+            checked = self.execution_dict(c, execution)
+            if (
+                checked["state"] != "COMPLETED"
+                or checked["result"] != record
+                or any(record.get(k) != v for k, v in decision["body"]["arguments"].items())
+            ):
+                raise Fault(503, "workflow_record_integrity_failed")
+            records.append(record)
+        return records
+
+    def _unknown_execution(self, c, case_id: str, execution_id: str) -> dict:
+        row = c.execute(
+            "SELECT executions.* FROM executions JOIN decisions ON decisions.id=executions.decision_id WHERE executions.id=? AND decisions.case_id=?",
+            (execution_id, case_id),
+        ).fetchone()
+        if not row:
+            raise Fault(404, "execution_not_found")
+        result = self.execution_dict(c, row)
+        if result["state"] != "OUTCOME_UNKNOWN":
+            raise Fault(409, "execution_is_not_unknown")
+        if any(
+            r["execution_id"] == execution_id
+            for r in self._workflow_records(c, case_id, "execution.reconciled")
+        ):
+            raise Fault(409, "execution_already_reconciled")
+        return result
+
+    def _open_challenge(self, c, case_id: str, challenge_id: str) -> dict:
+        records = self._workflow_records(c, case_id, "finding.challenged")
+        record = next((r for r in records if r["id"] == challenge_id), None)
+        if record is None:
+            raise Fault(404, "challenge_not_found")
+        if any(
+            r["challenge_id"] == challenge_id
+            for r in self._workflow_records(c, case_id, "finding.challenge_resolved")
+        ):
+            raise Fault(409, "challenge_already_resolved")
+        return record
+
+    def _inventory(self, c, case_id: str):
+        """Detect missing projection rows as well as modified records."""
+        events = self.store.audit_events(c, case_id)
+        for table, event, field in (
+            ("artifacts", "artifact.preserved", "artifact_id"),
+            ("decisions", "decision.proposed", "decision_id"),
+        ):
+            expected = {e["body"]["payload"][field] for e in events if e["body"]["event"] == event}
+            # Table identifiers are fixed above, never request parameters.
+            actual = {
+                r[0] for r in c.execute(f"SELECT id FROM {table} WHERE case_id=?", (case_id,))
+            }
+            if expected != actual:
+                raise Fault(503, "case_inventory_incomplete")
+        executions = c.execute(
+            "SELECT executions.* FROM executions JOIN decisions ON decisions.id=executions.decision_id WHERE decisions.case_id=?",
+            (case_id,),
+        ).fetchall()
+        expected = {
+            e["body"]["payload"]["execution_id"]
+            for e in events
+            if e["body"]["event"] == "execution.intent"
+        }
+        if expected != {r["id"] for r in executions}:
+            raise Fault(503, "execution_history_incomplete")
+        findings, packs = set(), set()
+        for row in executions:
+            result = self.execution_dict(c, row)
+            decision = self._decision(c, case_id, row["decision_id"])
+            if result["state"] == "COMPLETED":
+                if decision["body"]["tool"] == "accept_finding":
+                    findings.add(result["result"]["id"])
+                if decision["body"]["tool"] == "promote_pack":
+                    packs.add(result["result"]["pack_id"])
+        if findings != {
+            r[0] for r in c.execute("SELECT id FROM findings WHERE case_id=?", (case_id,))
+        } or packs != {r[0] for r in c.execute("SELECT id FROM packs WHERE case_id=?", (case_id,))}:
+            raise Fault(503, "case_result_inventory_incomplete")
+        members = {}
+        for event in events:
+            body = event["body"]
+            if body["event"] in {"member.added", "member.removed"}:
+                members[body["payload"]["username"]] = int(body["event"] == "member.added")
+        if members != {
+            r[0]: r[1]
+            for r in c.execute("SELECT username,active FROM members WHERE case_id=?", (case_id,))
+        }:
+            raise Fault(503, "membership_history_mismatch")
 
     def _finding(self, c, row):
         finding = strict_json(row["body"])
@@ -1033,6 +1286,7 @@ class Service:
     def detail(self, actor: dict, case_id: str) -> dict:
         with self.store.transaction(case_id) as c:
             case = self._case(c, case_id, actor)
+            self._inventory(c, case_id)
             case["members"] = [
                 dict(r)
                 for r in c.execute(
@@ -1053,18 +1307,15 @@ class Service:
                 )
             ]
             for decision in case["decisions"]:
-                decision["approvals"] = [
-                    strict_json(r[0])
-                    for r in c.execute(
-                        "SELECT envelope FROM approvals WHERE decision_id=?", (decision["id"],)
-                    )
-                ]
+                decision["approvals"] = self._reviews(c, decision)
+                approval_ids = {a["body"]["id"] for a in decision["approvals"]}
                 decision["revoked_approval_ids"] = [
-                    r[0]
+                    strict_json(r[0])["payload"]["approval_id"]
                     for r in c.execute(
-                        "SELECT revocations.approval_id FROM revocations JOIN approvals ON approvals.id=revocations.approval_id WHERE approvals.decision_id=?",
-                        (decision["id"],),
+                        "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event')='approval.revoked'",
+                        (case_id,),
                     )
+                    if strict_json(r[0])["payload"]["approval_id"] in approval_ids
                 ]
             case["executions"] = [
                 self.execution_dict(c, r)
@@ -1077,6 +1328,11 @@ class Service:
                 self._finding(c, r)
                 for r in c.execute("SELECT * FROM findings WHERE case_id=?", (case_id,))
             ]
+            case["reconciliations"] = self._workflow_records(c, case_id, "execution.reconciled")
+            case["challenges"] = self._workflow_records(c, case_id, "finding.challenged")
+            case["challenge_resolutions"] = self._workflow_records(
+                c, case_id, "finding.challenge_resolved"
+            )
             case["packs"] = [
                 {
                     "id": r["id"],
@@ -1090,14 +1346,69 @@ class Service:
             case["integrity"] = self.store.verify_ledger(c, case_id)
         return case
 
-    def audit_view(self, actor: dict, case_id: str):
-        with self.store.transaction(case_id) as c:
-            self._case(c, case_id, actor)
-            self.store.audit(c, case_id, actor, "audit.viewed", {"case_id": case_id})
-            events = self.store.audit_events(c, case_id)
+    def audit_view(
+        self,
+        actor: dict,
+        case_id: str,
+        limit: int = 100,
+        before: int | None = None,
+        through: int | None = None,
+    ):
+        with self.store.lock:
+            with self.store.transaction(case_id) as c:
+                self._case(c, case_id, actor)
+                self.store.audit(
+                    c,
+                    case_id,
+                    actor,
+                    "audit.viewed",
+                    {"case_id": case_id, "limit": limit, "before": before, "through": through},
+                )
+                head = c.execute(
+                    "SELECT MAX(seq) FROM audit WHERE ledger=?", (case_id,)
+                ).fetchone()[0]
+                through = through or head
+                before = before or through + 1
+                if through > head or before > through + 1:
+                    raise Fault(422, "invalid_audit_cursor")
+                rows = c.execute(
+                    "SELECT body,hash FROM audit WHERE ledger=? AND seq<? AND seq<=? ORDER BY seq DESC LIMIT ?",
+                    (case_id, before, through, limit),
+                ).fetchall()
+                events = [
+                    {"body": strict_json(r["body"]), "hash": r["hash"]} for r in reversed(rows)
+                ]
+            path = (
+                self.store.directory
+                / "checkpoints"
+                / (sha256(case_id.encode()) + "-" + str(through) + ".json")
+            )
+            if not path.exists():
+                raise Fault(422, "audit_snapshot_not_retained")
+            checkpoint = strict_json(path.read_bytes())
+            with self.store.connect() as c:
+                expected = c.execute(
+                    "SELECT hash FROM audit WHERE ledger=? AND seq=?", (case_id, through)
+                ).fetchone()
+            if (
+                not verify_signature(
+                    checkpoint, "TFIR-CHECKPOINT-v1", self.store.audit_signer.public_pem
+                )
+                or checkpoint["body"]["ledger"] != case_id
+                or checkpoint["body"]["event_count"] != str(through)
+                or checkpoint["body"]["head_hash"] != expected[0]
+            ):
+                raise Fault(503, "audit_snapshot_integrity_failed")
+        next_before = int(events[0]["body"]["sequence"]) if events else 1
         return {
             "events": events,
-            "checkpoint": strict_json(self.store.checkpoint_path(case_id).read_bytes()),
+            "checkpoint": checkpoint,
+            "page": {
+                "through": through,
+                "next_before": next_before,
+                "has_more": next_before > 1,
+                "limit": limit,
+            },
         }
 
     def artifact_download(self, actor: dict, case_id: str, artifact_id: str):
@@ -1132,14 +1443,23 @@ class Service:
 
     def recover(self):
         """Explicit administrator instruction; never repeats an interrupted tool call."""
+        try:
+            with self.store.dispatch_lock.acquire(timeout=0):
+                return self._recover()
+        except Timeout as exc:
+            raise Fault(409, "active_execution_blocks_recovery") from exc
+
+    def _recover(self):
         with self.store.connect() as c:
             rows = c.execute(
                 "SELECT executions.id,decisions.case_id FROM executions JOIN decisions ON decisions.id=executions.decision_id WHERE executions.state='RUNNING'"
             ).fetchall()
         for row in rows:
             with self.store.transaction(row["case_id"]) as c:
+                current = c.execute("SELECT * FROM executions WHERE id=?", (row["id"],)).fetchone()
+                self.execution_dict(c, current)
                 c.execute(
-                    "UPDATE executions SET state='OUTCOME_UNKNOWN',updated=? WHERE id=? AND state='RUNNING'",
+                    "UPDATE executions SET state='OUTCOME_UNKNOWN',result=NULL,updated=? WHERE id=? AND state='RUNNING'",
                     (now(), row["id"]),
                 )
                 self.store.audit(

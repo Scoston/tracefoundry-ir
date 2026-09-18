@@ -99,12 +99,21 @@ def uid() -> str:
     return secrets.token_hex(16)
 
 
+class ClosingConnection(sqlite3.Connection):
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            return super().__exit__(exc_type, exc_value, traceback)
+        finally:
+            self.close()
+
+
 class Store:
     def __init__(self, directory: Path):
         self.directory = directory.resolve()
         if not (self.directory / "state.sqlite3").exists():
             raise RuntimeError("Initialize first: tracefoundry init")
         self.lock = FileLock(str(self.directory / "transaction.lock"), timeout=30)
+        self.dispatch_lock = FileLock(str(self.directory / "dispatch.lock"), timeout=60)
         self.approval_signer = Signer(self.directory / "keys" / "approvals.pem")
         self.audit_signer = Signer(self.directory / "keys" / "audit.pem")
         self.vault = Vault(self.directory / "keys" / "vault.key")
@@ -139,7 +148,9 @@ class Store:
         return cls(directory)
 
     def connect(self):
-        connection = sqlite3.connect(self.directory / "state.sqlite3", timeout=30)
+        connection = sqlite3.connect(
+            self.directory / "state.sqlite3", timeout=30, factory=ClosingConnection
+        )
         connection.row_factory = sqlite3.Row
         connection.execute("PRAGMA foreign_keys=ON")
         connection.execute("PRAGMA synchronous=FULL")
@@ -310,31 +321,64 @@ class Store:
             )
 
     def change_user(
-        self, username: str, *, roles: list[str] | None = None, active: bool | None = None
+        self,
+        username: str,
+        *,
+        roles: list[str] | None = None,
+        active: bool | None = None,
+        password: str | None = None,
+        actor: dict | None = None,
+        reason: str = "trusted host administration",
     ):
-        with self.connect() as c:
+        hashed = password_hash(password) if password is not None else None
+        with self.lock, self.connect() as c:
             existing = self.user(c, username, require_active=False)
         if roles is not None and (not roles or set(roles) - {"admin", "analyst", "supervisor"}):
             raise ValueError("Invalid roles")
         with self.transaction("admin-" + existing["tenant"]) as c:
+            self.user(c, username, require_active=False)
             row = c.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
             body = strict_json(row["attestation"])["body"]
             if roles is not None:
                 body["roles"] = sorted(set(roles))
             if active is not None:
                 body["active"] = active
+            if hashed is not None:
+                body["password_digest"] = sha256(hashed.encode())
             envelope = self.audit_signer.sign("TFIR-IDENTITY-v1", body)
             c.execute(
-                "UPDATE users SET roles=?,active=?,attestation=? WHERE username=?",
-                (encoded(body["roles"]), int(body["active"]), encoded(envelope), username),
+                "UPDATE users SET roles=?,active=?,password=?,attestation=? WHERE username=?",
+                (
+                    encoded(body["roles"]),
+                    int(body["active"]),
+                    hashed or row["password"],
+                    encoded(envelope),
+                    username,
+                ),
             )
             c.execute("DELETE FROM sessions WHERE username=?", (username,))
             self.audit(
                 c,
                 "admin-" + existing["tenant"],
-                "local-administrator",
+                actor or "local-administrator",
                 "identity.changed",
-                {"username": username, "identity_digest": digest("TFIR-IDENTITY-v1", body)},
+                {
+                    "username": username,
+                    "identity_digest": digest("TFIR-IDENTITY-v1", body),
+                    "reason": reason,
+                    "password_changed": hashed is not None,
+                },
+            )
+
+    def change_password(self, actor: dict, current_password: str, new_password: str):
+        # Keep reauthentication and credential replacement in one serialized boundary.
+        with self.lock:
+            self.reauthenticate(actor, current_password)
+            self.change_user(
+                actor["username"],
+                password=new_password,
+                actor=actor,
+                reason="human requested password change",
             )
 
     def user(self, c, username: str, *, require_active=True) -> dict:
@@ -359,7 +403,7 @@ class Store:
         ledger = "admin-" + record["tenant"]
         self.verify_ledger(c, ledger)
         latest = c.execute(
-            "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event') IN ('identity.created','identity.changed') AND json_extract(body,'$.payload.username')=? ORDER BY seq DESC LIMIT 1",
+            "SELECT body,hash FROM audit WHERE ledger=? AND json_extract(body,'$.event') IN ('identity.created','identity.changed') AND json_extract(body,'$.payload.username')=? ORDER BY seq DESC LIMIT 1",
             (ledger, username),
         ).fetchone()
         if not latest or strict_json(latest[0])["payload"]["identity_digest"] != digest(
@@ -368,6 +412,7 @@ class Store:
             raise Fault(503, "identity_history_mismatch")
         if require_active and not record["active"]:
             raise Fault(401, "account_disabled")
+        record["identity_event"] = latest["hash"]
         return record
 
     def login(self, username: str, password: str, peer: str) -> tuple[dict, str, str]:
@@ -411,18 +456,32 @@ class Store:
             "auth_event": auth_event,
             "expires": (datetime.now(UTC) + timedelta(minutes=30)).isoformat(),
         }
-        session_attestation = self.audit_signer.sign("TFIR-SESSION-v1", session_body)
         with self.transaction("admin-" + actor["tenant"]) as c:
+            # An account change between password verification and session creation must win.
+            current = self.user(c, username)
+            if current["identity_event"] != actor["identity_event"]:
+                raise Fault(401, "identity_changed_during_login")
+            session_body["identity_event"] = current["identity_event"]
+            session_attestation = self.audit_signer.sign("TFIR-SESSION-v1", session_body)
             c.execute(
                 "INSERT INTO sessions VALUES (?,?,?,?,?,?)",
-                (*session_body.values(), encoded(session_attestation)),
+                (
+                    *(
+                        session_body[k]
+                        for k in ("token_hash", "username", "csrf_hash", "auth_event", "expires")
+                    ),
+                    encoded(session_attestation),
+                ),
             )
             self.audit(
                 c,
                 "admin-" + actor["tenant"],
                 username,
                 "authentication.succeeded",
-                {"auth_event": auth_event},
+                {
+                    "auth_event": auth_event,
+                    "session_sha256": sha256(canonical(session_attestation)),
+                },
             )
         return (
             {"username": username, "roles": actor["roles"], "tenant": actor["tenant"]},
@@ -444,11 +503,22 @@ class Store:
                 k: session[k]
                 for k in ("token_hash", "username", "csrf_hash", "auth_event", "expires")
             }
+            expected["identity_event"] = envelope["body"].get("identity_event")
             if envelope["body"] != expected or not verify_signature(
                 envelope, "TFIR-SESSION-v1", self.audit_signer.public_pem
             ):
                 raise Fault(401, "session_attestation_invalid")
             actor = self.user(c, session["username"])
+            if expected["identity_event"] != actor["identity_event"]:
+                raise Fault(401, "session_identity_changed")
+            issued = c.execute(
+                "SELECT body FROM audit WHERE ledger=? AND json_extract(body,'$.event')='authentication.succeeded' AND json_extract(body,'$.payload.auth_event')=?",
+                ("admin-" + actor["tenant"], session["auth_event"]),
+            ).fetchone()
+            if not issued or strict_json(issued[0])["payload"].get("session_sha256") != sha256(
+                canonical(envelope)
+            ):
+                raise Fault(401, "session_issue_receipt_missing")
             logged_out = c.execute(
                 "SELECT 1 FROM audit WHERE ledger=? AND json_extract(body,'$.event')='authentication.logged_out' AND json_extract(body,'$.payload.auth_event')=?",
                 ("admin-" + actor["tenant"], session["auth_event"]),
@@ -483,3 +553,4 @@ class Store:
                 raise Fault(403, "human_reauthentication_failed")
             c.execute("DELETE FROM login_attempts WHERE bucket=?", (bucket,))
             c.commit()
+            return current["identity_event"]

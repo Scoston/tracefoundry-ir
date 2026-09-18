@@ -4,7 +4,7 @@ import hmac
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, Request
+from fastapi import Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -70,6 +70,7 @@ class BoundaryMiddleware:
                     break
             if body:
                 if headers.get(b"content-type", b"").split(b";")[0] != b"application/json":
+                    self.service.deny(None, "application_json_required", "request_boundary")
                     return await JSONResponse({"error": "application_json_required"}, 415)(
                         scope, receive, secure_send
                     )
@@ -212,6 +213,13 @@ def create_app(directory: str | Path | None = None, *, provider=None) -> FastAPI
         response.delete_cookie("tfir_session", path="/")
         return response
 
+    @app.post("/api/password")
+    def password_change(body: models.PasswordChange, current=Depends(actor)):
+        store.change_password(current, body.current_password, body.new_password)
+        response = JSONResponse({"password_changed": True, "sessions_invalidated": True})
+        response.delete_cookie("tfir_session", path="/")
+        return response
+
     @app.get("/api/me")
     def me(current=Depends(actor)):
         return {
@@ -282,8 +290,14 @@ def create_app(directory: str | Path | None = None, *, provider=None) -> FastAPI
         return service.execute(current, case_id, decision_id)
 
     @app.get("/api/cases/{case_id}/audit")
-    def audit(case_id: str, current=Depends(actor)):
-        return service.audit_view(current, case_id)
+    def audit(
+        case_id: str,
+        limit: int = Query(100, ge=1, le=500),
+        before: int | None = Query(None, ge=1),
+        through: int | None = Query(None, ge=1),
+        current=Depends(actor),
+    ):
+        return service.audit_view(current, case_id, limit, before, through)
 
     @app.get("/api/cases/{case_id}/artifacts/{artifact_id}")
     def download(case_id: str, artifact_id: str, current=Depends(actor)):
